@@ -10,7 +10,6 @@ const sliderState = {
   isAnimating: false,
   queuedDirection: 0,
   isVisible: false,
-  allPreloaded: false,
   usesManagedPhotos: false
 };
 let galleryPhotosUpdatedListener = null;
@@ -23,13 +22,13 @@ export async function initSlider() {
   bindSliderControls();
   startSliderTimer();
 
-  // Supabase 목록은 첫 화면을 막지 않고 뒤에서 받아 교체합니다.
+  // 관리자에서 직접 업로드한 Storage 사진만 뒤에서 반영합니다.
+  // 로컬 asset 행은 photos.json의 숫자 파일 순서를 덮어쓰지 않습니다.
   loadManagedPhotos().then((managedPhotos) => {
     if (!managedPhotos?.length) return;
     sliderState.allPhotos = managedPhotos;
     sliderState.photos = managedPhotos;
     sliderState.currentSlide = 0;
-    sliderState.allPreloaded = false;
     sliderState.usesManagedPhotos = true;
     renderSlider();
     restartSliderTimer();
@@ -47,9 +46,12 @@ async function loadLocalPhotos() {
   if (!response.ok) throw new Error('photos.json 파일을 불러오지 못했습니다.');
   const data = await response.json();
   if (!Array.isArray(data)) throw new Error('photos.json 형식이 올바르지 않습니다.');
-  // 로컬 원본·표시본을 요청하지 않고, 가장 작은 썸네일만 공개 화면에 사용합니다.
+  // 갤러리 격자는 썸네일을 쓰고, 슬라이더·팝업은 원본 사진을 사용합니다.
   return data
-    .map((photo) => ({ ...photo, src: photo.thumb || photo.src }))
+    .map((photo) => ({
+      ...photo,
+      original: String(photo.src || '').replace('/display/', '/') || photo.src
+    }))
     .sort((left, right) => fileNumber(left) - fileNumber(right));
 }
 
@@ -58,13 +60,14 @@ async function loadManagedPhotos() {
 
   const { data, error } = await supabaseClient
     .from('wedding_gallery')
-    .select('image_url, thumbnail_url, alt')
+    .select('image_url, thumbnail_url, alt, source_type')
     .eq('is_visible', true)
     .order('display_order');
 
   if (error) return null;
   return Array.isArray(data) ? data
-    // 원본만 있는 기존 행은 공개 갤러리에 넣지 않습니다.
+    // 원본만 있는 기존 행과 로컬 asset 중복 행은 공개 갤러리에 넣지 않습니다.
+    .filter((photo) => photo.source_type === 'storage')
     .filter((photo) => typeof photo.thumbnail_url === 'string' && photo.thumbnail_url.trim())
     .map((photo) => ({
       src: photo.thumbnail_url,
@@ -79,7 +82,7 @@ function normalizedIndex(index) {
 }
 
 function photoSource(photo) {
-  return photo?.thumb || photo?.src || '';
+  return photo?.original || photo?.src || photo?.thumb || '';
 }
 
 function setSliderLoading(visible) {
@@ -138,23 +141,6 @@ function preloadAdjacentPhotos() {
     const image = new Image();
     image.src = source;
   });
-}
-
-function preloadAllPhotos() {
-  if (sliderState.allPreloaded || sliderState.photos.length < 2) return;
-  sliderState.allPreloaded = true;
-  const sources = [...new Set(sliderState.photos.map(photoSource).filter(Boolean))];
-  const preload = () => sources.forEach((source) => {
-    const image = new Image();
-    image.decoding = 'async';
-    image.src = source;
-  });
-
-  if ('requestIdleCallback' in window) {
-    window.requestIdleCallback(preload, { timeout: 1600 });
-  } else {
-    window.setTimeout(preload, 300);
-  }
 }
 
 function moveSlide(direction) {
@@ -256,7 +242,6 @@ function bindSliderControls() {
       sliderState.isVisible = Boolean(entries[0]?.isIntersecting);
       if (sliderState.isVisible) {
         startSliderTimer();
-        preloadAllPhotos();
       } else {
         stopSliderTimer();
       }
@@ -264,7 +249,6 @@ function bindSliderControls() {
     observer.observe(slider);
   } else {
     sliderState.isVisible = true;
-    preloadAllPhotos();
   }
 
   document.addEventListener('visibilitychange', () => {
