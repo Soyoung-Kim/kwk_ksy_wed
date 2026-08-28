@@ -119,7 +119,7 @@ function renderEmpty(galleryEl, countEl, moreWrapEl) {
   }
 }
 
-function galleryItemMarkup(photo, index) {
+function galleryItemMarkup(photo, index, loading = 'lazy') {
   return `
     <button
       type="button"
@@ -131,7 +131,7 @@ function galleryItemMarkup(photo, index) {
         src="${escapeHtml(photo.thumb)}"
         alt="${escapeHtml(photo.alt)}"
         class="is-loading"
-        loading="eager"
+        loading="${loading}"
         decoding="async"
       />
     </button>
@@ -167,6 +167,8 @@ function hydrateGalleryImages(images, loadingEl) {
 
   images.forEach((image) => {
     const finishLoading = () => {
+      if (image.dataset.galleryLoadHandled === 'true') return;
+      image.dataset.galleryLoadHandled = 'true';
       image.classList.remove('is-loading');
       image.closest('.gallery-item')?.classList.add('is-loaded');
       markComplete();
@@ -177,11 +179,11 @@ function hydrateGalleryImages(images, loadingEl) {
   });
 }
 
-function appendGalleryItems(galleryEl, startIndex, endIndex, loadingEl) {
+function appendGalleryItems(galleryEl, startIndex, endIndex, loadingEl, loading = 'lazy') {
   const fragment = document.createRange().createContextualFragment(
     galleryState.photos
       .slice(startIndex, endIndex)
-      .map((photo, offset) => galleryItemMarkup(photo, startIndex + offset))
+      .map((photo, offset) => galleryItemMarkup(photo, startIndex + offset, loading))
       .join('')
   );
   const images = [...fragment.querySelectorAll('img')];
@@ -268,7 +270,7 @@ function toggleGalleryExpanded() {
   );
   const ui = ensureGalleryUi();
   if (!ui || galleryState.visibleCount === previousCount) return;
-  appendGalleryItems(ui.galleryEl, previousCount, galleryState.visibleCount, ui.loadingEl);
+  appendGalleryItems(ui.galleryEl, previousCount, galleryState.visibleCount, ui.loadingEl, 'eager');
   updateMoreButton(ui.moreWrapEl, ui.moreButtonEl);
 }
 
