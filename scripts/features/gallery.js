@@ -1,7 +1,8 @@
 import { qs, escapeHtml } from '../utils.js';
 
 const INITIAL_VISIBLE_COUNT = 6;
-let galleryLoadingTimer = null;
+let galleryLoadingShowTimer = null;
+let galleryLoadingJob = 0;
 
 const galleryState = {
   photos: [],
@@ -67,7 +68,7 @@ function ensureGalleryUi() {
     loadingEl.className = 'gallery-loading';
     loadingEl.hidden = true;
     loadingEl.setAttribute('role', 'status');
-    loadingEl.innerHTML = '<span class="gallery-loading-spinner" aria-hidden="true"></span><span class="gallery-loading-text">사진을 준비하고 있어요</span><span class="gallery-loading-progress"><i></i></span>';
+    loadingEl.innerHTML = '<span class="gallery-loading-spinner" aria-hidden="true"></span><span class="gallery-loading-text">사진을 준비하고 있어요</span>';
     galleryEl.insertAdjacentElement('afterend', loadingEl);
   }
 
@@ -138,31 +139,31 @@ function galleryItemMarkup(photo, index, loading = 'lazy') {
   `;
 }
 
-function setGalleryLoading(loadingEl, completed, total) {
-  if (!loadingEl) return;
-  window.clearTimeout(galleryLoadingTimer);
-  const textEl = loadingEl.querySelector('.gallery-loading-text');
-  const barEl = loadingEl.querySelector('.gallery-loading-progress > i');
-  loadingEl.hidden = false;
-  if (textEl) textEl.textContent = `사진을 준비하고 있어요 ${completed} / ${total}`;
-  if (barEl) barEl.style.width = `${Math.round((completed / total) * 100)}%`;
+function startGalleryLoading(loadingEl) {
+  const job = ++galleryLoadingJob;
+  if (!loadingEl) return job;
+  window.clearTimeout(galleryLoadingShowTimer);
+  loadingEl.hidden = true;
+  galleryLoadingShowTimer = window.setTimeout(() => {
+    if (job === galleryLoadingJob) loadingEl.hidden = false;
+  }, 400);
+  return job;
 }
 
-function hideGalleryLoading(loadingEl) {
-  if (!loadingEl) return;
-  window.clearTimeout(galleryLoadingTimer);
-  galleryLoadingTimer = window.setTimeout(() => { loadingEl.hidden = true; }, 220);
+function stopGalleryLoading(loadingEl, job) {
+  if (!loadingEl || job !== galleryLoadingJob) return;
+  window.clearTimeout(galleryLoadingShowTimer);
+  loadingEl.hidden = true;
 }
 
 function hydrateGalleryImages(images, loadingEl) {
   if (!images.length) return;
   let completed = 0;
-  setGalleryLoading(loadingEl, completed, images.length);
+  const loadingJob = startGalleryLoading(loadingEl);
 
   const markComplete = () => {
     completed += 1;
-    setGalleryLoading(loadingEl, completed, images.length);
-    if (completed === images.length) hideGalleryLoading(loadingEl);
+    if (completed === images.length) stopGalleryLoading(loadingEl, loadingJob);
   };
 
   images.forEach((image) => {

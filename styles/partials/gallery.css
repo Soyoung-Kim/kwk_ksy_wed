@@ -124,23 +124,6 @@
 
 .gallery-loading-text { white-space: nowrap; }
 
-.gallery-loading-progress {
-  width: 46px;
-  height: 3px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(185, 147, 113, 0.20);
-}
-
-.gallery-loading-progress > i {
-  display: block;
-  width: 0;
-  height: 100%;
-  border-radius: inherit;
-  background: #b99371;
-  transition: width 180ms ease;
-}
-
 @keyframes gallery-loading-spin {
   to { transform: rotate(360deg); }
 }
