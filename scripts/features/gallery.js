@@ -2,6 +2,7 @@ import { qs, escapeHtml } from '../utils.js';
 
 const INITIAL_VISIBLE_COUNT = 6;
 let galleryLoadingShowTimer = null;
+let galleryLoadingSafetyTimer = null;
 let galleryLoadingJob = 0;
 
 const galleryState = {
@@ -147,23 +148,27 @@ function startGalleryLoading(loadingEl) {
   galleryLoadingShowTimer = window.setTimeout(() => {
     if (job === galleryLoadingJob) loadingEl.hidden = false;
   }, 400);
+  galleryLoadingSafetyTimer = window.setTimeout(() => {
+    if (job === galleryLoadingJob) stopGalleryLoading(loadingEl, job);
+  }, 6000);
   return job;
 }
 
 function stopGalleryLoading(loadingEl, job) {
   if (!loadingEl || job !== galleryLoadingJob) return;
   window.clearTimeout(galleryLoadingShowTimer);
+  window.clearTimeout(galleryLoadingSafetyTimer);
   loadingEl.hidden = true;
 }
 
-function hydrateGalleryImages(images, loadingEl) {
+function hydrateGalleryImages(images, loadingEl, showIndicator = false) {
   if (!images.length) return;
   let completed = 0;
-  const loadingJob = startGalleryLoading(loadingEl);
+  const loadingJob = showIndicator ? startGalleryLoading(loadingEl) : null;
 
   const markComplete = () => {
     completed += 1;
-    if (completed === images.length) stopGalleryLoading(loadingEl, loadingJob);
+    if (showIndicator && completed === images.length) stopGalleryLoading(loadingEl, loadingJob);
   };
 
   images.forEach((image) => {
@@ -180,7 +185,7 @@ function hydrateGalleryImages(images, loadingEl) {
   });
 }
 
-function appendGalleryItems(galleryEl, startIndex, endIndex, loadingEl, loading = 'lazy') {
+function appendGalleryItems(galleryEl, startIndex, endIndex, loadingEl, loading = 'lazy', showIndicator = false) {
   const fragment = document.createRange().createContextualFragment(
     galleryState.photos
       .slice(startIndex, endIndex)
@@ -189,7 +194,7 @@ function appendGalleryItems(galleryEl, startIndex, endIndex, loadingEl, loading 
   );
   const images = [...fragment.querySelectorAll('img')];
   galleryEl.appendChild(fragment);
-  hydrateGalleryImages(images, loadingEl);
+  hydrateGalleryImages(images, loadingEl, showIndicator);
 }
 
 function renderGallery() {
@@ -271,7 +276,7 @@ function toggleGalleryExpanded() {
   );
   const ui = ensureGalleryUi();
   if (!ui || galleryState.visibleCount === previousCount) return;
-  appendGalleryItems(ui.galleryEl, previousCount, galleryState.visibleCount, ui.loadingEl, 'eager');
+  appendGalleryItems(ui.galleryEl, previousCount, galleryState.visibleCount, ui.loadingEl, 'eager', true);
   updateMoreButton(ui.moreWrapEl, ui.moreButtonEl);
 }
 
