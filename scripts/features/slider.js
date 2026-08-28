@@ -8,7 +8,9 @@ const sliderState = {
   slideTimer: null,
   touchStartX: 0,
   isAnimating: false,
+  queuedDirection: 0,
   isVisible: false,
+  allPreloaded: false,
   usesManagedPhotos: false
 };
 let galleryPhotosUpdatedListener = null;
@@ -27,6 +29,7 @@ export async function initSlider() {
     sliderState.allPhotos = managedPhotos;
     sliderState.photos = managedPhotos;
     sliderState.currentSlide = 0;
+    sliderState.allPreloaded = false;
     sliderState.usesManagedPhotos = true;
     renderSlider();
     restartSliderTimer();
@@ -137,8 +140,29 @@ function preloadAdjacentPhotos() {
   });
 }
 
+function preloadAllPhotos() {
+  if (sliderState.allPreloaded || sliderState.photos.length < 2) return;
+  sliderState.allPreloaded = true;
+  const sources = [...new Set(sliderState.photos.map(photoSource).filter(Boolean))];
+  const preload = () => sources.forEach((source) => {
+    const image = new Image();
+    image.decoding = 'async';
+    image.src = source;
+  });
+
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(preload, { timeout: 1600 });
+  } else {
+    window.setTimeout(preload, 300);
+  }
+}
+
 function moveSlide(direction) {
-  if (sliderState.isAnimating || sliderState.photos.length < 2) return;
+  if (sliderState.photos.length < 2) return;
+  if (sliderState.isAnimating) {
+    sliderState.queuedDirection = direction;
+    return;
+  }
   const slidesEl = qs('#slides');
   const activeImage = slidesEl?.querySelector('.slide-image.is-active');
   const incomingImage = slidesEl?.querySelector('.slide-image:not(.is-active)');
@@ -147,19 +171,29 @@ function moveSlide(direction) {
   sliderState.isAnimating = true;
   const nextIndex = normalizedIndex(sliderState.currentSlide + direction);
   const nextPhoto = sliderState.photos[nextIndex];
+  // 버튼을 누르는 순간 숫자와 다음 목적지를 먼저 반영합니다.
+  sliderState.currentSlide = nextIndex;
+  updateCount();
+  const stage = slidesEl.querySelector('.fade-stage');
   const reveal = () => {
     if (!sliderState.isAnimating) return;
     incomingImage.removeAttribute('aria-hidden');
     activeImage.setAttribute('aria-hidden', 'true');
+    stage?.classList.toggle('is-next', direction > 0);
+    stage?.classList.toggle('is-prev', direction < 0);
+    // 시작 위치를 한 프레임 확정해 좌우 이동 전환을 보장합니다.
+    void incomingImage.offsetWidth;
     incomingImage.classList.add('is-active');
     activeImage.classList.remove('is-active');
     setSliderLoading(false);
-    sliderState.currentSlide = nextIndex;
-    updateCount();
     window.setTimeout(() => {
       sliderState.isAnimating = false;
+      stage?.classList.remove('is-next', 'is-prev');
       preloadAdjacentPhotos();
-    }, 360);
+      const queuedDirection = sliderState.queuedDirection;
+      sliderState.queuedDirection = 0;
+      if (queuedDirection) moveSlide(queuedDirection);
+    }, 280);
   };
 
   incomingImage.alt = nextPhoto.alt || `웨딩 사진 ${nextIndex + 1}`;
@@ -167,7 +201,6 @@ function moveSlide(direction) {
   if (incomingImage.complete) {
     window.requestAnimationFrame(reveal);
   } else {
-    setSliderLoading(true);
     incomingImage.addEventListener('load', reveal, { once: true });
     incomingImage.addEventListener('error', reveal, { once: true });
   }
@@ -183,7 +216,7 @@ function prevSlide() {
 
 function startSliderTimer() {
   stopSliderTimer();
-  if (sliderState.isVisible && sliderState.photos.length > 1) sliderState.slideTimer = window.setInterval(nextSlide, 5200);
+  if (sliderState.isVisible && sliderState.photos.length > 1) sliderState.slideTimer = window.setInterval(nextSlide, 4200);
 }
 
 function stopSliderTimer() {
@@ -221,11 +254,17 @@ function bindSliderControls() {
   if ('IntersectionObserver' in window) {
     const observer = new IntersectionObserver((entries) => {
       sliderState.isVisible = Boolean(entries[0]?.isIntersecting);
-      if (sliderState.isVisible) startSliderTimer(); else stopSliderTimer();
+      if (sliderState.isVisible) {
+        startSliderTimer();
+        preloadAllPhotos();
+      } else {
+        stopSliderTimer();
+      }
     }, { threshold: 0.2 });
     observer.observe(slider);
   } else {
     sliderState.isVisible = true;
+    preloadAllPhotos();
   }
 
   document.addEventListener('visibilitychange', () => {
