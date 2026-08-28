@@ -7,7 +7,7 @@ insert into public.wedding_gallery
 select source.image_url, source.image_url, 'asset', source.alt, source.display_order, true
 from (
   values
-    ('./assets/photos/28.jpg', '웨딩 사진 1', 10),
+
     ('./assets/photos/1.jpg', '웨딩 사진 2', 20),
     ('./assets/photos/2.jpg', '웨딩 사진 3', 30),
     ('./assets/photos/3.jpg', '웨딩 사진 4', 40),
@@ -32,7 +32,8 @@ from (
     ('./assets/photos/23.jpg', '웨딩 사진 23', 230),
     ('./assets/photos/24.jpg', '웨딩 사진 24', 240),
     ('./assets/photos/25.jpg', '웨딩 사진 25', 250),
-    ('./assets/photos/26.jpg', '웨딩 사진 26', 260)
+    ('./assets/photos/26.jpg', '웨딩 사진 26', 260),
+    ('./assets/photos/28.jpg', '웨딩 사진 28', 280),
 ) as source(image_url, alt, display_order)
 where not exists (
   select 1 from public.wedding_gallery current where current.image_url = source.image_url
