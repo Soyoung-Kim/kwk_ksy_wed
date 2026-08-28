@@ -1,0 +1,30 @@
+.rsvp-section { margin: 26px auto 0; padding: 38px 22px 30px; border: 1px solid rgba(181, 153, 132, 0.12); border-radius: 30px; background: rgba(255, 255, 255, 0.86); box-shadow: 0 20px 48px rgba(73, 55, 40, 0.08); }
+.rsvp-open-button { width: 100%; margin-top: 4px; }
+.rsvp-help { margin: 12px 0 0; color: #7a6b60; font-size: 0.8rem; text-align: center; }
+.rsvp-modal { position: fixed; inset: 0; z-index: 1450; display: grid; place-items: center; padding: 16px; }
+.rsvp-backdrop { position: absolute; inset: 0; background: rgba(35, 25, 30, 0.56); }
+.rsvp-dialog { position: relative; z-index: 1; width: min(460px, 100%); max-height: calc(100vh - 32px); overflow: auto; padding: 28px 22px 22px; border-radius: 26px; background: #fffdfb; box-shadow: 0 24px 60px rgba(40, 22, 30, 0.28); }
+.rsvp-dialog h3 { margin: 0; color: #352e2d; font-size: 1.42rem; letter-spacing: -0.045em; }
+.rsvp-dialog-description { margin: 8px 0 22px; color: #70635e; font-size: 0.9rem; line-height: 1.6; }
+.rsvp-prompt-actions { display: grid; gap: 10px; }
+.rsvp-prompt-actions .button { width: 100%; }
+.rsvp-close { position: absolute; top: 12px; right: 12px; width: 40px; height: 40px; border: 0; background: transparent; color: #765d61; font-size: 1.8rem; cursor: pointer; }
+.rsvp-form { display: grid; gap: 16px; }
+.rsvp-choice-fieldset { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; margin: 0; padding: 0; border: 0; }
+.rsvp-choice-fieldset legend { grid-column: 1 / -1; margin-bottom: 2px; color: #5e504d; font-size: 0.9rem; font-weight: 700; }
+.rsvp-choice { position: relative; display: grid; place-items: center; min-height: 50px; border: 1px solid rgba(104, 103, 103, 0.22); border-radius: 14px; background: #faf9f8; color: #6d6664; font-size: 0.92rem; font-weight: 700; cursor: pointer; transition: background 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease; }
+.rsvp-choice:has(input[value='attending']) { border-color: rgba(49, 117, 91, 0.32); background: #f1f8f4; color: #2d7259; }
+.rsvp-choice:has(input[value='declined']) { border-color: rgba(119, 106, 108, 0.28); background: #f8f6f6; color: #75686b; }
+.rsvp-choice.is-selected { color: #fff; box-shadow: 0 7px 15px rgba(70, 52, 53, 0.16), inset 0 0 0 1px rgba(255, 255, 255, 0.28); }
+.rsvp-choice.is-selected::after { content: '✓'; position: absolute; top: 7px; right: 9px; font-size: 0.72rem; font-weight: 800; }
+.rsvp-choice.is-attending.is-selected, .rsvp-choice:has(input[value='attending']:checked) { border-color: #2f7b5e; background: #2f7b5e; color: #fff; }
+.rsvp-choice.is-declined.is-selected, .rsvp-choice:has(input[value='declined']:checked) { border-color: #a14457; background: #a14457; color: #fff; }
+.rsvp-choice input { position: absolute; opacity: 0; }
+.rsvp-field { display: grid; gap: 7px; color: #5e504d; font-size: 0.9rem; font-weight: 700; }
+.rsvp-field > span { margin-left: 4px; color: #9a8982; font-size: 0.75rem; font-weight: 500; }
+.rsvp-field input, .rsvp-field select, .rsvp-field textarea { width: 100%; border: 1px solid rgba(120, 86, 84, 0.20); border-radius: 13px; padding: 12px 13px; background: #fff; color: #352e2d; font: inherit; }
+.rsvp-field textarea { min-height: 88px; resize: vertical; }
+.rsvp-field input:focus, .rsvp-field select:focus, .rsvp-field textarea:focus { outline: 0; border-color: #a83f5c; box-shadow: 0 0 0 3px rgba(168, 63, 92, 0.12); }
+.rsvp-status { min-height: 1.4em; margin: 0; color: #a83f5c; font-size: 0.84rem; }
+.rsvp-honeypot { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+@media (max-width: 768px) { .rsvp-section { padding: 28px 16px 24px; border-radius: 24px; } }

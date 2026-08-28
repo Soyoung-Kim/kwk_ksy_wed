@@ -1,6 +1,7 @@
-import { qs, qsa, escapeHtml } from '../utils.js';
+import { qs, escapeHtml } from '../utils.js';
 
 const INITIAL_VISIBLE_COUNT = 6;
+let galleryLoadingTimer = null;
 
 const galleryState = {
   photos: [],
@@ -16,7 +17,9 @@ function normalizePhotos(photos) {
   return photos
     .filter((photo) => photo && typeof photo.src === 'string' && photo.src.trim())
     .map((photo, index) => ({
-      src: photo.src,
+      // 확대·저장을 제한한 청첩장에서는 큰 원본을 다시 받지 않습니다.
+      src: photo.thumb || photo.src,
+      thumb: photo.thumb || photo.src,
       alt: photo.alt || `웨딩 사진 ${index + 1}`
     }));
 }
@@ -40,6 +43,7 @@ function ensureGalleryUi() {
 
   let moreWrapEl = qs('#gallery-more-wrap', sectionEl || document);
   let moreButtonEl = qs('#gallery-more-btn', sectionEl || document);
+  let loadingEl = qs('#gallery-loading', sectionEl || document);
 
   if (!moreWrapEl && sectionEl) {
     moreWrapEl = document.createElement('div');
@@ -57,17 +61,24 @@ function ensureGalleryUi() {
     galleryEl.insertAdjacentElement('afterend', moreWrapEl);
   }
 
+  if (!loadingEl && sectionEl) {
+    loadingEl = document.createElement('div');
+    loadingEl.id = 'gallery-loading';
+    loadingEl.className = 'gallery-loading';
+    loadingEl.hidden = true;
+    loadingEl.setAttribute('role', 'status');
+    loadingEl.innerHTML = '<span class="gallery-loading-spinner" aria-hidden="true"></span><span class="gallery-loading-text">사진을 준비하고 있어요</span><span class="gallery-loading-progress"><i></i></span>';
+    galleryEl.insertAdjacentElement('afterend', loadingEl);
+  }
+
   return {
     galleryEl,
     sectionEl,
     countEl,
     moreWrapEl,
-    moreButtonEl
+    moreButtonEl,
+    loadingEl
   };
-}
-
-function getVisiblePhotos() {
-  return galleryState.photos.slice(0, galleryState.visibleCount);
 }
 
 function updateGalleryCount(countEl) {
@@ -78,15 +89,16 @@ function updateGalleryCount(countEl) {
 function updateMoreButton(moreWrapEl, moreButtonEl) {
   if (!moreWrapEl || !moreButtonEl) return;
 
-  const hasMore = galleryState.visibleCount < galleryState.photos.length;
-  moreWrapEl.hidden = !hasMore;
-
-  if (!hasMore) {
+  if (galleryState.photos.length <= INITIAL_VISIBLE_COUNT) {
+    moreWrapEl.hidden = true;
     return;
   }
 
-  moreButtonEl.textContent = '사진 더 보기';
-  moreButtonEl.setAttribute('aria-expanded', 'false');
+  const hasMore = galleryState.visibleCount < galleryState.photos.length;
+  moreWrapEl.hidden = false;
+
+  moreButtonEl.textContent = hasMore ? '사진 더 보기' : '사진 접기';
+  moreButtonEl.setAttribute('aria-expanded', String(!hasMore));
 }
 
 function renderEmpty(galleryEl, countEl, moreWrapEl) {
@@ -107,11 +119,81 @@ function renderEmpty(galleryEl, countEl, moreWrapEl) {
   }
 }
 
+function galleryItemMarkup(photo, index) {
+  return `
+    <button
+      type="button"
+      class="gallery-item"
+      data-gallery-index="${index}"
+      aria-label="${escapeHtml(photo.alt)} 크게 보기"
+    >
+      <img
+        src="${escapeHtml(photo.thumb)}"
+        alt="${escapeHtml(photo.alt)}"
+        class="is-loading"
+        loading="eager"
+        decoding="async"
+      />
+    </button>
+  `;
+}
+
+function setGalleryLoading(loadingEl, completed, total) {
+  if (!loadingEl) return;
+  window.clearTimeout(galleryLoadingTimer);
+  const textEl = loadingEl.querySelector('.gallery-loading-text');
+  const barEl = loadingEl.querySelector('.gallery-loading-progress > i');
+  loadingEl.hidden = false;
+  if (textEl) textEl.textContent = `사진을 준비하고 있어요 ${completed} / ${total}`;
+  if (barEl) barEl.style.width = `${Math.round((completed / total) * 100)}%`;
+}
+
+function hideGalleryLoading(loadingEl) {
+  if (!loadingEl) return;
+  window.clearTimeout(galleryLoadingTimer);
+  galleryLoadingTimer = window.setTimeout(() => { loadingEl.hidden = true; }, 220);
+}
+
+function hydrateGalleryImages(images, loadingEl) {
+  if (!images.length) return;
+  let completed = 0;
+  setGalleryLoading(loadingEl, completed, images.length);
+
+  const markComplete = () => {
+    completed += 1;
+    setGalleryLoading(loadingEl, completed, images.length);
+    if (completed === images.length) hideGalleryLoading(loadingEl);
+  };
+
+  images.forEach((image) => {
+    const finishLoading = () => {
+      image.classList.remove('is-loading');
+      image.closest('.gallery-item')?.classList.add('is-loaded');
+      markComplete();
+    };
+    if (image.complete) finishLoading();
+    image.addEventListener('load', finishLoading, { once: true });
+    image.addEventListener('error', finishLoading, { once: true });
+  });
+}
+
+function appendGalleryItems(galleryEl, startIndex, endIndex, loadingEl) {
+  const fragment = document.createRange().createContextualFragment(
+    galleryState.photos
+      .slice(startIndex, endIndex)
+      .map((photo, offset) => galleryItemMarkup(photo, startIndex + offset))
+      .join('')
+  );
+  const images = [...fragment.querySelectorAll('img')];
+  galleryEl.appendChild(fragment);
+  hydrateGalleryImages(images, loadingEl);
+}
+
 function renderGallery() {
   const ui = ensureGalleryUi();
   if (!ui) return;
 
-  const { galleryEl, countEl, moreWrapEl, moreButtonEl } = ui;
+  const { galleryEl, countEl, moreWrapEl, moreButtonEl, loadingEl } = ui;
 
   updateGalleryCount(countEl);
 
@@ -120,36 +202,10 @@ function renderGallery() {
     return;
   }
 
-  const visiblePhotos = getVisiblePhotos();
-
-  galleryEl.innerHTML = visiblePhotos
-    .map((photo, index) => {
-      return `
-        <button
-          type="button"
-          class="gallery-item"
-          data-gallery-index="${index}"
-          aria-label="${escapeHtml(photo.alt)} 크게 보기"
-        >
-          <img
-            src="${escapeHtml(photo.src)}"
-            alt="${escapeHtml(photo.alt)}"
-            class="is-loading"
-            loading="lazy"
-          />
-        </button>
-      `;
-    })
-    .join('');
+  galleryEl.innerHTML = '';
+  appendGalleryItems(galleryEl, 0, galleryState.visibleCount, loadingEl);
 
   updateMoreButton(moreWrapEl, moreButtonEl);
-
-  qsa('#gallery img').forEach((image) => {
-    const finishLoading = () => image.classList.remove('is-loading');
-    if (image.complete) finishLoading();
-    image.addEventListener('load', finishLoading, { once: true });
-    image.addEventListener('error', finishLoading, { once: true });
-  });
 }
 
 function openLightbox(index) {
@@ -199,11 +255,21 @@ function closeLightbox() {
 }
 
 function toggleGalleryExpanded() {
+  if (galleryState.visibleCount >= galleryState.photos.length) {
+    galleryState.visibleCount = INITIAL_VISIBLE_COUNT;
+    renderGallery();
+    return;
+  }
+
+  const previousCount = galleryState.visibleCount;
   galleryState.visibleCount = Math.min(
     galleryState.visibleCount + INITIAL_VISIBLE_COUNT,
     galleryState.photos.length
   );
-  renderGallery();
+  const ui = ensureGalleryUi();
+  if (!ui || galleryState.visibleCount === previousCount) return;
+  appendGalleryItems(ui.galleryEl, previousCount, galleryState.visibleCount, ui.loadingEl);
+  updateMoreButton(ui.moreWrapEl, ui.moreButtonEl);
 }
 
 function bindGalleryEvents() {

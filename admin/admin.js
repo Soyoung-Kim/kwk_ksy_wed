@@ -2,13 +2,14 @@ import { supabaseClient } from '../scripts/supabaseClient.js';
 
 const GALLERY_BUCKET = 'wedding-gallery';
 const SUPPORTED_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp']);
-const state = { contacts: [], accounts: [], gallery: [] };
+const state = { contacts: [], accounts: [], gallery: [], rsvps: [] };
 const els = {
   loginView: document.getElementById('login-view'), adminView: document.getElementById('admin-view'),
   loginForm: document.getElementById('login-form'), loginId: document.getElementById('login-id'),
   loginPassword: document.getElementById('login-password'), loginStatus: document.getElementById('login-status'),
   adminStatus: document.getElementById('admin-status'), contacts: document.getElementById('contacts-list'),
   accounts: document.getElementById('accounts-list'), gallery: document.getElementById('gallery-list'),
+  rsvpSummary: document.getElementById('rsvp-summary'), rsvpList: document.getElementById('rsvp-list'),
   uploadForm: document.getElementById('gallery-upload-form'), uploadFile: document.getElementById('gallery-file'),
   uploadAlt: document.getElementById('gallery-alt'), logout: document.getElementById('logout-button'),
   toast: document.getElementById('admin-toast')
@@ -23,6 +24,14 @@ function field(label, name, value, type = 'text', wide = false) {
   input.name = name; input.type = type; input.value = value ?? '';
   wrap.append(input); return wrap;
 }
+function checkboxField(label, name, checked) {
+  const wrap = document.createElement('label');
+  wrap.className = 'visibility-field';
+  const input = document.createElement('input');
+  input.name = name; input.type = 'checkbox'; input.checked = Boolean(checked);
+  wrap.append(input, document.createTextNode(label));
+  return wrap;
+}
 function button(text, className = '') { const el = document.createElement('button'); el.type = 'submit'; el.textContent = text; el.className = className; return el; }
 function formValue(form, name) { return new FormData(form).get(name)?.toString().trim() || ''; }
 function previewUrl(imageUrl) { return imageUrl.startsWith('./assets/') ? `../${imageUrl.slice(2)}` : imageUrl; }
@@ -35,6 +44,36 @@ function isMovFile(file) { return getFileExtension(file) === 'mov' || file.type 
 function isSupportedImage(file) {
   return SUPPORTED_IMAGE_EXTENSIONS.has(getFileExtension(file))
     && ['image/jpeg', 'image/png', 'image/webp', ''].includes(file.type);
+}
+async function decodeImage(file) {
+  if (window.createImageBitmap) {
+    try { return await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+    catch { return createImageBitmap(file); }
+  }
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = await new Promise((resolve, reject) => {
+      const element = new Image();
+      element.onload = () => resolve(element);
+      element.onerror = reject;
+      element.src = objectUrl;
+    });
+    return image;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+async function createJpegVariant(file, maxEdge, quality = 0.84) {
+  const image = await decodeImage(file);
+  const scale = Math.min(1, maxEdge / Math.max(image.width, image.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(image.width * scale));
+  canvas.height = Math.max(1, Math.round(image.height * scale));
+  canvas.getContext('2d', { alpha: false }).drawImage(image, 0, 0, canvas.width, canvas.height);
+  image.close?.();
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
+  if (!blob) throw new Error('이미지 변환에 실패했습니다.');
+  return blob;
 }
 function notify(message, type = 'success') {
   setStatus(message);
@@ -97,18 +136,46 @@ function renderAccounts() {
   });
 }
 
+function renderRsvps() {
+  if (!els.rsvpSummary || !els.rsvpList) return;
+  const attending = state.rsvps.filter((row) => row.attendance === 'attending');
+  const declined = state.rsvps.filter((row) => row.attendance === 'declined');
+  const guestTotal = attending.reduce((sum, row) => sum + Number(row.guest_count || 0), 0);
+  els.rsvpSummary.innerHTML = [
+    ['참석', `${attending.length}건`],
+    ['불참', `${declined.length}건`],
+    ['예상 인원', `${guestTotal}명`]
+  ].map(([label, value]) => `<div class="rsvp-summary-item"><span>${label}</span><strong>${value}</strong></div>`).join('');
+  els.rsvpList.replaceChildren();
+  if (!state.rsvps.length) {
+    els.rsvpList.textContent = '아직 응답이 없습니다.';
+    return;
+  }
+  state.rsvps.forEach((row) => {
+    const item = document.createElement('article'); item.className = 'rsvp-row';
+    const response = row.attendance === 'attending' ? `참석 · ${row.guest_count}명` : '불참';
+    const status = document.createElement('span'); status.className = `rsvp-row-status ${row.attendance === 'declined' ? 'declined' : ''}`; status.textContent = response;
+    const copy = document.createElement('div'); copy.className = 'rsvp-row-copy';
+    const name = document.createElement('strong'); name.textContent = row.guest_name || '이름 미입력';
+    const message = document.createElement('span'); message.textContent = row.message || '전달 사항 없음'; copy.append(name, message);
+    const time = document.createElement('time'); time.textContent = new Date(row.updated_at).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
+    item.append(status, copy, time); els.rsvpList.append(item);
+  });
+}
+
 function renderGallery() {
   els.gallery.replaceChildren();
   state.gallery.forEach((row) => {
     const form = document.createElement('form'); form.className = 'gallery-editor-card';
-    const image = document.createElement('img'); image.src = previewUrl(row.image_url); image.alt = row.alt;
+    const image = document.createElement('img'); image.src = previewUrl(row.thumbnail_url || row.image_url); image.alt = row.alt;
     const fields = document.createElement('div'); fields.className = 'editor-fields';
-    fields.append(field('설명', 'alt', row.alt), field('순서', 'display_order', row.display_order, 'number'));
+    fields.append(field('설명', 'alt', row.alt), field('순서', 'display_order', row.display_order, 'number'), checkboxField('청첩장에 표시', 'is_visible', row.is_visible));
     const remove = button('삭제', 'danger'); remove.type = 'button';
     remove.addEventListener('click', async () => {
       if (!window.confirm('이 사진을 갤러리에서 삭제할까요?')) return;
       setStatus('사진을 삭제하는 중입니다.');
-      if (row.storage_path) await supabaseClient.storage.from(GALLERY_BUCKET).remove([row.storage_path]);
+      const paths = [row.storage_path, row.thumbnail_storage_path].filter(Boolean);
+      if (paths.length) await supabaseClient.storage.from(GALLERY_BUCKET).remove(paths);
       const { error } = await supabaseClient.from('wedding_gallery').delete().eq('id', row.id);
       if (error) return notify(`사진 삭제에 실패했습니다: ${error.message}`, 'error');
       await loadData();
@@ -117,7 +184,11 @@ function renderGallery() {
     form.append(image, fields, remove);
     form.addEventListener('submit', async (event) => {
       event.preventDefault(); setStatus('사진 정보를 저장하는 중입니다.');
-      const { error } = await supabaseClient.from('wedding_gallery').update({ alt: formValue(form, 'alt'), display_order: Number(formValue(form, 'display_order')) || 0 }).eq('id', row.id);
+      const { error } = await supabaseClient.from('wedding_gallery').update({
+        alt: formValue(form, 'alt'),
+        display_order: Number(formValue(form, 'display_order')) || 0,
+        is_visible: form.elements.is_visible.checked
+      }).eq('id', row.id);
       if (error) return notify(`사진 정보 저장에 실패했습니다: ${error.message}`, 'error');
       await loadData();
       notify('사진 정보를 저장했습니다.');
@@ -128,15 +199,16 @@ function renderGallery() {
 
 async function loadData() {
   setStatus('관리 정보를 불러오는 중입니다.');
-  const [contacts, accounts, gallery] = await Promise.all([
+  const [contacts, accounts, gallery, rsvps] = await Promise.all([
     supabaseClient.from('wedding_contacts').select('id, side, contact_type, role_label, name, phone, display_order, is_visible').order('display_order'),
     supabaseClient.from('wedding_accounts').select('id, side, side_label, bank_name, account_holder, account_number, display_order, is_visible').order('display_order'),
-    supabaseClient.from('wedding_gallery').select('*').order('display_order')
+    supabaseClient.from('wedding_gallery').select('*').order('display_order'),
+    supabaseClient.from('wedding_rsvps').select('attendance, guest_count, guest_name, message, updated_at').order('updated_at', { ascending: false })
   ]);
-  const error = contacts.error || accounts.error || gallery.error;
+  const error = contacts.error || accounts.error || gallery.error || rsvps.error;
   if (error) return setStatus(`관리 정보를 불러오지 못했습니다: ${error.message}`);
-  state.contacts = contacts.data || []; state.accounts = accounts.data || []; state.gallery = gallery.data || [];
-  renderContacts(); renderAccounts(); renderGallery(); setStatus('');
+  state.contacts = contacts.data || []; state.accounts = accounts.data || []; state.gallery = gallery.data || []; state.rsvps = rsvps.data || [];
+  renderContacts(); renderAccounts(); renderRsvps(); renderGallery(); setStatus('');
 }
 
 async function showForSession(session) {
@@ -180,31 +252,46 @@ els.uploadForm.addEventListener('submit', async (event) => {
   const alt = els.uploadAlt.value.trim() || '웨딩 사진';
 
   for (const [index, file] of imageFiles.entries()) {
-    const extension = getFileExtension(file);
-    const storagePath = `gallery/${Date.now()}-${crypto.randomUUID()}.${extension}`;
-    setStatus(`사진 업로드 중… ${index + 1} / ${imageFiles.length}`);
-    const { error: uploadError } = await supabaseClient.storage
-      .from(GALLERY_BUCKET)
-      .upload(storagePath, file, { contentType: file.type, upsert: false });
-
-    if (uploadError) {
+    const imageId = crypto.randomUUID();
+    const displayPath = `display/${imageId}.jpg`;
+    const thumbnailPath = `thumb/${imageId}.jpg`;
+    setStatus(`사진 변환·업로드 중… ${index + 1} / ${imageFiles.length}`);
+    try {
+      const [displayBlob, thumbnailBlob] = await Promise.all([
+        createJpegVariant(file, 2560, 0.86),
+        createJpegVariant(file, 640, 0.78)
+      ]);
+      const [displayUpload, thumbnailUpload] = await Promise.all([
+        supabaseClient.storage.from(GALLERY_BUCKET).upload(displayPath, displayBlob, { contentType: 'image/jpeg', upsert: false }),
+        supabaseClient.storage.from(GALLERY_BUCKET).upload(thumbnailPath, thumbnailBlob, { contentType: 'image/jpeg', upsert: false })
+      ]);
+      if (displayUpload.error || thumbnailUpload.error) {
+        await supabaseClient.storage.from(GALLERY_BUCKET).remove([displayPath, thumbnailPath]);
+        throw new Error(displayUpload.error?.message || thumbnailUpload.error?.message || 'Storage 업로드에 실패했습니다.');
+      }
+      const storage = supabaseClient.storage.from(GALLERY_BUCKET);
+      const displayUrl = storage.getPublicUrl(displayPath).data.publicUrl;
+      const thumbnailUrl = storage.getPublicUrl(thumbnailPath).data.publicUrl;
+      uploadedRows.push({
+        image_url: displayUrl,
+        thumbnail_url: thumbnailUrl,
+        storage_path: displayPath,
+        thumbnail_storage_path: thumbnailPath,
+        source_type: 'storage',
+        alt: imageFiles.length > 1 ? `${alt} ${index + 1}` : alt,
+        display_order: baseOrder + (index + 1) * 10,
+        is_visible: true
+      });
+    } catch (error) {
       failedFiles.push(file.name);
-      continue;
+      console.error('[admin] gallery upload failed', error);
     }
-
-    const { data: urlData } = supabaseClient.storage.from(GALLERY_BUCKET).getPublicUrl(storagePath);
-    uploadedRows.push({
-      image_url: urlData.publicUrl,
-      storage_path: storagePath,
-      alt: imageFiles.length > 1 ? `${alt} ${index + 1}` : alt,
-      display_order: baseOrder + (index + 1) * 10
-    });
   }
 
   if (uploadedRows.length) {
     const { error } = await supabaseClient.from('wedding_gallery').insert(uploadedRows);
     if (error) {
-      await supabaseClient.storage.from(GALLERY_BUCKET).remove(uploadedRows.map((row) => row.storage_path));
+      await supabaseClient.storage.from(GALLERY_BUCKET).remove(uploadedRows.flatMap((row) => [row.storage_path, row.thumbnail_storage_path]));
       return setStatus(`사진 목록 저장에 실패했습니다: ${error.message}`);
     }
   }

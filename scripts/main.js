@@ -26,16 +26,30 @@ function initInteractionGuard() {
     }
   });
 
-  // 모바일 브라우저의 두 손가락 핀치 확대를 제한합니다.
-  document.addEventListener('touchmove', (event) => {
-    if (event.touches.length > 1 && !event.target.closest('#rough-map-lightbox')) event.preventDefault();
-  }, { passive: false });
+  // 전역 touchmove 차단은 모바일 스크롤 성능을 크게 떨어뜨립니다.
+  // 확대 제한은 CSS touch-action과 viewport 설정으로 처리합니다.
+}
 
-  ['gesturestart', 'gesturechange', 'gestureend'].forEach((eventName) => {
-    document.addEventListener(eventName, (event) => {
-      if (!event.target.closest?.('#rough-map-lightbox')) event.preventDefault();
-    }, { passive: false });
-  });
+function resetScrollToTop() {
+  window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  window.requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }));
+}
+
+function initIntroScrollSnap() {
+  const cover = document.getElementById('invitation-cover');
+  if (!cover) return;
+  let frame = 0;
+  const update = () => {
+    frame = 0;
+    const releasePoint = Math.max(120, cover.offsetHeight - (window.innerHeight || 1) * 0.55);
+    document.documentElement.classList.toggle('is-intro-snap', window.scrollY < releasePoint);
+  };
+  const onScroll = () => {
+    if (!frame) frame = window.requestAnimationFrame(update);
+  };
+  update();
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', update, { passive: true });
 }
 
 function initTextSizeControl() {
@@ -110,7 +124,8 @@ async function init() {
     mapsModule,
     guestbookModule,
     sliderModule,
-    galleryModule
+    galleryModule,
+    rsvpModule
   ] = await Promise.all([
     safeImport('intro', './features/intro.js'),
     safeImport('countdown', './features/countdown.js'),
@@ -120,7 +135,8 @@ async function init() {
     safeImport('maps', './features/maps.js'),
     safeImport('guestbook', './features/guestbook.js'),
     safeImport('slider', './features/slider.js'),
-    safeImport('gallery', './features/gallery.js')
+    safeImport('gallery', './features/gallery.js'),
+    safeImport('rsvp', './features/rsvp.js')
   ]);
 
   if (introModule?.initIntroParallax) {
@@ -175,11 +191,37 @@ async function init() {
     await safeRun('gallery', async () => {
       const photos = sliderModule.getGalleryPhotos();
       galleryModule.initGallery(Array.isArray(photos) ? photos : []);
+      sliderModule.onGalleryPhotosUpdated?.((updatedPhotos) => {
+        const applyUpdate = () => galleryModule.initGallery(Array.isArray(updatedPhotos) ? updatedPhotos : []);
+        const gallery = document.getElementById('gallery');
+        const rect = gallery?.getBoundingClientRect();
+        const isVisible = rect && rect.top < window.innerHeight && rect.bottom > 0;
+        if (!isVisible) {
+          window.requestIdleCallback?.(applyUpdate, { timeout: 800 }) || window.setTimeout(applyUpdate, 180);
+          return;
+        }
+        // Avoid replacing image nodes while the visitor is scrolling this section.
+        const observer = new IntersectionObserver((entries) => {
+          if (entries[0]?.isIntersecting) return;
+          observer.disconnect();
+          applyUpdate();
+        });
+        observer.observe(gallery);
+      });
+    });
+  }
+
+  if (rsvpModule?.initRsvp) {
+    await safeRun('rsvp', async () => {
+      rsvpModule.initRsvp();
     });
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  resetScrollToTop();
+  window.addEventListener('pageshow', resetScrollToTop, { once: true });
+  initIntroScrollSnap();
   initInteractionGuard();
   initTextSizeControl();
   initFloatingNavigation();

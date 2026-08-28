@@ -2,7 +2,7 @@
 <html lang="ko">
 
 <head>
-  <link rel="icon" href="./assets/photos/icon.png" type="image/png" />
+  <link rel="icon" href="./assets/photos/main_logo.png" type="image/png" />
 
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
@@ -15,6 +15,10 @@
   <meta property="og:type" content="website" />
   <meta property="og:image" content="./assets/photos/main_logo.png" />
   <meta name="theme-color" content="#fbf6f1" />
+  <!-- Gallery starts with these tiny previews, so the first swipe never waits for a full photo. -->
+  <link rel="preload" as="image" href="./assets/photos/thumbs/1.jpg" fetchpriority="high" />
+  <link rel="preload" as="image" href="./assets/photos/thumbs/2.jpg" />
+  <link rel="preload" as="image" href="./assets/photos/thumbs/3.jpg" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -23,6 +27,10 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
 
   <link rel="stylesheet" href="./styles/style.css" />
+  <script>
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    window.scrollTo(0, 0);
+  </script>
 </head>
 
 <body>
@@ -191,7 +199,16 @@
         </div>
       </div>
     </section>
-<!--  계좌번호 영역 disable
+    <section class="rsvp-section invitation-panel" aria-labelledby="rsvp-title">
+      <div class="section-heading">
+        <p class="section-kicker">Attendance</p>
+        <h2 id="rsvp-title">참석 여부 전달</h2>
+        <p class="section-description">보내주신 내용은 예식 준비를 위한 참고용으로 활용됩니다.<br />일정이 변경되셨다면 언제든 편하게 알려주세요.</p>
+      </div>
+      <button class="button button-primary rsvp-open-button" id="rsvp-open-button" type="button">참석 여부 응답하기</button>
+    </section>
+
+    <!-- 계좌번호 영역 disable
     <section class="wedding-accounts" aria-labelledby="wedding-accounts-title">
       <div class="section-heading">
         <p class="section-kicker">Account</p>
@@ -382,6 +399,40 @@
       <img id="rough-map-lightbox-image" src="./assets/roughMap.png" alt="농심컨벤션웨딩홀 약도 확대 이미지" />
     </div>
     <p class="map-lightbox-hint">두 손가락으로 확대하고, 한 손가락으로 이동할 수 있습니다.</p>
+  </div>
+
+  <div class="rsvp-modal" id="rsvp-modal" hidden>
+    <div class="rsvp-backdrop" data-rsvp-close></div>
+    <section class="rsvp-dialog" role="dialog" aria-modal="true" aria-labelledby="rsvp-dialog-title">
+      <button class="rsvp-close" type="button" data-rsvp-close aria-label="참석 여부 응답 닫기">×</button>
+      <div id="rsvp-prompt-view">
+        <p class="section-kicker">Attendance</p>
+        <h3 id="rsvp-dialog-title">참석 여부 전달</h3>
+        <p class="rsvp-dialog-description">보내주신 내용은 예식 준비를 위한 참고용으로 활용됩니다.<br />일정이 변경되셨다면 언제든 편하게 알려주세요.</p>
+        <div class="rsvp-prompt-actions">
+          <button class="button button-primary" id="rsvp-prompt-yes" type="button">응답하기</button>
+          <button class="button button-secondary" id="rsvp-prompt-later" type="button">오늘 하루 보지 않기</button>
+        </div>
+      </div>
+      <div id="rsvp-form-view" hidden>
+        <p class="section-kicker">Attendance</p>
+        <h3>참석 여부 전달</h3>
+        <p class="rsvp-dialog-description">보내주신 내용은 예식 준비를 위한 참고용으로 활용됩니다.<br />일정이 변경되셨다면 언제든 편하게 알려주세요.</p>
+        <form id="rsvp-form" class="rsvp-form">
+        <fieldset class="rsvp-choice-fieldset">
+          <legend>참석 여부</legend>
+          <label class="rsvp-choice"><input type="radio" name="attendance" value="attending" checked /><span>참석합니다</span></label>
+          <label class="rsvp-choice"><input type="radio" name="attendance" value="declined" /><span>참석이 어렵습니다</span></label>
+        </fieldset>
+        <label class="rsvp-field">성함 <span>선택</span><input name="name" maxlength="30" autocomplete="name" placeholder="성함을 입력해주세요" /></label>
+        <label class="rsvp-field" id="rsvp-guest-count-field">참석 인원<select name="guest_count" aria-label="참석 인원"><option value="1">1명</option><option value="2">2명</option><option value="3">3명</option><option value="4">4명</option><option value="5">5명 이상</option></select></label>
+        <label class="rsvp-field">전달 사항 <span>선택</span><textarea name="message" maxlength="200" placeholder="식사 여부 등 전달하실 내용이 있다면 남겨주세요."></textarea></label>
+        <label class="rsvp-honeypot" aria-hidden="true">웹사이트<input name="website" tabindex="-1" autocomplete="off" /></label>
+        <p class="rsvp-status" id="rsvp-status" aria-live="polite"></p>
+        <button class="button button-primary" id="rsvp-submit-button" type="submit">응답 저장하기</button>
+      </form>
+      </div>
+    </section>
   </div>
 
   <div class="toast" id="toast">복사되었습니다.</div>

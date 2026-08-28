@@ -118,7 +118,10 @@ body {
 
 .wedding-accounts,
 .guestbook-section,
-.share-section { border-color: var(--line); box-shadow: 0 22px 48px rgba(73, 38, 47, 0.09); }
+.share-section,
+.rsvp-section { border-color: var(--line); box-shadow: 0 22px 48px rgba(73, 38, 47, 0.09); }
+.rsvp-section { background: linear-gradient(140deg, rgba(255, 255, 255, 0.96), rgba(255, 244, 247, 0.92)); }
+.rsvp-help { color: var(--ink-soft); }
 .directory-group { border-color: rgba(168, 63, 92, 0.20); }
 .directory-group-groom { border-color: rgba(65, 101, 157, 0.38); }
 .directory-group-bride { border-color: rgba(184, 78, 112, 0.38); }
