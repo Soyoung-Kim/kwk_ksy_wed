@@ -5,6 +5,8 @@
   width: min(1080px, calc(100% - 24px));
   margin: 0 auto;
   padding: 28px 0 72px;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 .section {

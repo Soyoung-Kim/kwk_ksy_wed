@@ -13,6 +13,7 @@ html {
 
 html.is-intro-snap {
   scroll-snap-type: y proximity;
+}
 
 html,
 body {
