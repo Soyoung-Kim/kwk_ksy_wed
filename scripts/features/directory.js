@@ -1,4 +1,5 @@
 import { supabaseClient } from '../supabaseClient.js';
+import { APP_CONFIG } from '../../config.js';
 
 const CONTACTS_TABLE = 'wedding_contacts';
 const ACCOUNTS_TABLE = 'wedding_accounts';
@@ -155,18 +156,38 @@ function renderAccounts(accounts) {
   renderGrouped(list, displayableAccounts, '계좌번호', createAccountCard);
 }
 
+function setAccountsSectionVisible(enabled) {
+  const section = document.querySelector('.wedding-accounts');
+  if (section) section.hidden = !enabled;
+}
+
+async function loadAccountSectionEnabled() {
+  if (!supabaseClient || !APP_CONFIG?.siteKey) return true;
+  const { data, error } = await supabaseClient
+    .from('wedding_site_settings')
+    .select('accounts_enabled')
+    .eq('site_key', APP_CONFIG.siteKey)
+    .maybeSingle();
+  // SQL 적용 전이나 설정 행이 없을 때는 기존처럼 계좌를 표시합니다.
+  if (error || !data) return true;
+  return data.accounts_enabled !== false;
+}
+
 async function loadDirectory() {
   if (!supabaseClient) return;
-  const [contactsResult, accountsResult] = await Promise.all([
+  const [accountsEnabled, contactsResult] = await Promise.all([
+    loadAccountSectionEnabled(),
     supabaseClient.from(CONTACTS_TABLE)
       .select('side, role_label, name, phone, display_order')
-      .eq('is_visible', true).order('display_order'),
-    supabaseClient.from(ACCOUNTS_TABLE)
-      .select('side, side_label, bank_name, account_holder, account_number, display_order')
       .eq('is_visible', true).order('display_order')
   ]);
+  setAccountsSectionVisible(accountsEnabled);
   if (contactsResult.error) console.warn('[directory] contacts load failed', contactsResult.error);
   else renderContacts(contactsResult.data || []);
+  if (!accountsEnabled) return;
+  const accountsResult = await supabaseClient.from(ACCOUNTS_TABLE)
+    .select('side, side_label, bank_name, account_holder, account_number, display_order')
+    .eq('is_visible', true).order('display_order');
   if (accountsResult.error) console.warn('[directory] accounts load failed', accountsResult.error);
   else renderAccounts(accountsResult.data || []);
 }

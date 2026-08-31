@@ -13,6 +13,10 @@ create table if not exists public.wedding_rsvps (
   updated_at timestamptz not null default now()
 );
 
+-- Existing responses remain untouched and have a NULL site_key.
+alter table public.wedding_rsvps add column if not exists site_key text;
+create index if not exists wedding_rsvps_site_key_idx on public.wedding_rsvps (site_key, updated_at desc);
+
 create or replace function public.set_wedding_rsvp_updated_at()
 returns trigger language plpgsql as $$
 begin
@@ -82,5 +86,50 @@ begin
 end;
 $$;
 
+-- Records the invitation link for new or subsequently edited responses.
+create or replace function public.submit_wedding_rsvp(
+  p_client_token uuid,
+  p_attendance text,
+  p_guest_count integer,
+  p_name text,
+  p_message text,
+  p_website text,
+  p_site_key text
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  saved_id uuid;
+  safe_attendance text := lower(trim(coalesce(p_attendance, '')));
+  safe_count integer := coalesce(p_guest_count, 0);
+  safe_name text := btrim(coalesce(p_name, ''));
+  safe_message text := btrim(coalesce(p_message, ''));
+  safe_site_key text := nullif(btrim(coalesce(p_site_key, '')), '');
+begin
+  if coalesce(p_website, '') <> '' then raise exception 'Invalid request'; end if;
+  if p_client_token is null or safe_attendance not in ('attending', 'declined') then raise exception 'Invalid RSVP'; end if;
+  if safe_attendance = 'declined' then safe_count := 0; end if;
+  if safe_count < 0 or safe_count > 5 or char_length(safe_name) > 30 or char_length(safe_message) > 200 or char_length(coalesce(safe_site_key, '')) > 80 then
+    raise exception 'Invalid RSVP values';
+  end if;
+
+  insert into public.wedding_rsvps (client_token, attendance, guest_count, guest_name, message, site_key)
+  values (p_client_token, safe_attendance, safe_count, safe_name, safe_message, safe_site_key)
+  on conflict (client_token) do update set
+    attendance = excluded.attendance,
+    guest_count = excluded.guest_count,
+    guest_name = excluded.guest_name,
+    message = excluded.message,
+    site_key = coalesce(excluded.site_key, public.wedding_rsvps.site_key),
+    updated_at = now()
+  returning id into saved_id;
+  return saved_id;
+end;
+$$;
+
 revoke all on function public.submit_wedding_rsvp(uuid, text, integer, text, text, text) from public;
 grant execute on function public.submit_wedding_rsvp(uuid, text, integer, text, text, text) to anon, authenticated;
+grant execute on function public.submit_wedding_rsvp(uuid, text, integer, text, text, text, text) to anon, authenticated;

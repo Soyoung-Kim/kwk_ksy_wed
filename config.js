@@ -1,4 +1,5 @@
 export const APP_CONFIG = {
+  siteKey: 'ksy_kwk_wed',
   supabaseUrl: 'https://kagzenniuseexohgoggv.supabase.co',
   supabasePublishableKey: 'sb_publishable_dTkmvxrDFeRSPp5keks-ag_bU15zkY3',
 

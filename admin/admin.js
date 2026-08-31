@@ -1,8 +1,9 @@
 import { supabaseClient } from '../scripts/supabaseClient.js';
+import { APP_CONFIG } from '../config.js';
 
 const GALLERY_BUCKET = 'wedding-gallery';
 const SUPPORTED_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp']);
-const state = { contacts: [], accounts: [], gallery: [], rsvps: [] };
+const state = { contacts: [], accounts: [], gallery: [], rsvps: [], accountsEnabled: true };
 const els = {
   loginView: document.getElementById('login-view'), adminView: document.getElementById('admin-view'),
   loginForm: document.getElementById('login-form'), loginId: document.getElementById('login-id'),
@@ -12,7 +13,8 @@ const els = {
   rsvpSummary: document.getElementById('rsvp-summary'), rsvpList: document.getElementById('rsvp-list'),
   uploadForm: document.getElementById('gallery-upload-form'), uploadFile: document.getElementById('gallery-file'),
   uploadAlt: document.getElementById('gallery-alt'), logout: document.getElementById('logout-button'),
-  toast: document.getElementById('admin-toast')
+  toast: document.getElementById('admin-toast'),
+  siteSettingsForm: document.getElementById('site-settings-form'), accountsEnabled: document.getElementById('accounts-enabled')
 };
 
 function setStatus(message = '', login = false) { (login ? els.loginStatus : els.adminStatus).textContent = message; }
@@ -154,10 +156,11 @@ function renderRsvps() {
   state.rsvps.forEach((row) => {
     const item = document.createElement('article'); item.className = 'rsvp-row';
     const response = row.attendance === 'attending' ? `참석 · ${row.guest_count}명` : '불참';
+    const sourceLabel = row.site_key === 'ksy_kwk_wed' ? '원본 링크' : row.site_key === 'kwk_ksy_wed' ? '복제 링크' : '기존 응답';
     const status = document.createElement('span'); status.className = `rsvp-row-status ${row.attendance === 'declined' ? 'declined' : ''}`; status.textContent = response;
     const copy = document.createElement('div'); copy.className = 'rsvp-row-copy';
     const name = document.createElement('strong'); name.textContent = row.guest_name || '이름 미입력';
-    const message = document.createElement('span'); message.textContent = row.message || '전달 사항 없음'; copy.append(name, message);
+    const message = document.createElement('span'); message.textContent = `${row.message || '전달 사항 없음'} · ${sourceLabel}`; copy.append(name, message);
     const time = document.createElement('time'); time.textContent = new Date(row.updated_at).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
     item.append(status, copy, time); els.rsvpList.append(item);
   });
@@ -199,15 +202,18 @@ function renderGallery() {
 
 async function loadData() {
   setStatus('관리 정보를 불러오는 중입니다.');
-  const [contacts, accounts, gallery, rsvps] = await Promise.all([
+  const [contacts, accounts, gallery, rsvps, siteSettings] = await Promise.all([
     supabaseClient.from('wedding_contacts').select('id, side, contact_type, role_label, name, phone, display_order, is_visible').order('display_order'),
     supabaseClient.from('wedding_accounts').select('id, side, side_label, bank_name, account_holder, account_number, display_order, is_visible').order('display_order'),
     supabaseClient.from('wedding_gallery').select('*').order('display_order'),
-    supabaseClient.from('wedding_rsvps').select('attendance, guest_count, guest_name, message, updated_at').order('updated_at', { ascending: false })
+    supabaseClient.from('wedding_rsvps').select('attendance, guest_count, guest_name, message, site_key, updated_at').order('updated_at', { ascending: false }),
+    supabaseClient.from('wedding_site_settings').select('accounts_enabled').eq('site_key', APP_CONFIG.siteKey).maybeSingle()
   ]);
   const error = contacts.error || accounts.error || gallery.error || rsvps.error;
   if (error) return setStatus(`관리 정보를 불러오지 못했습니다: ${error.message}`);
   state.contacts = contacts.data || []; state.accounts = accounts.data || []; state.gallery = gallery.data || []; state.rsvps = rsvps.data || [];
+  state.accountsEnabled = siteSettings.data?.accounts_enabled !== false;
+  if (els.accountsEnabled) els.accountsEnabled.checked = state.accountsEnabled;
   renderContacts(); renderAccounts(); renderRsvps(); renderGallery(); setStatus('');
 }
 
@@ -231,6 +237,17 @@ els.loginForm.addEventListener('submit', async (event) => {
   if (error) setStatus('아이디 또는 비밀번호를 확인해주세요.', true);
 });
 els.logout.addEventListener('click', () => supabaseClient.auth.signOut());
+els.siteSettingsForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  setStatus('섹션 표시 설정을 저장하는 중입니다.');
+  const { error } = await supabaseClient.from('wedding_site_settings').upsert({
+    site_key: APP_CONFIG.siteKey,
+    accounts_enabled: els.accountsEnabled.checked
+  }, { onConflict: 'site_key' });
+  if (error) return notify(`설정 저장에 실패했습니다: ${error.message}`, 'error');
+  state.accountsEnabled = els.accountsEnabled.checked;
+  notify(state.accountsEnabled ? '계좌 정보 영역을 표시합니다.' : '계좌 정보 영역을 숨겼습니다.');
+});
 els.uploadForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const selectedFiles = Array.from(els.uploadFile.files || []);

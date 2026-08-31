@@ -1,4 +1,5 @@
 import { supabaseClient } from '../supabaseClient.js';
+import { APP_CONFIG } from '../../config.js';
 
 const TOKEN_KEY = 'wedding-rsvp-client-token';
 const DISMISS_KEY = 'wedding-rsvp-dismissed-date';
@@ -96,7 +97,8 @@ export function initRsvp() {
       p_guest_count: guestCount,
       p_name: String(values.get('name') || '').trim(),
       p_message: String(values.get('message') || '').trim(),
-      p_website: ''
+      p_website: '',
+      p_site_key: APP_CONFIG.siteKey || null
     });
     submitButton.disabled = false;
     submitButton.textContent = '응답 저장하기';
