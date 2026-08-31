@@ -36,8 +36,8 @@ body.guestbook-form-modal-open { overflow: hidden; }
   z-index: 1101;
   top: 50%;
   left: 50%;
-  width: min(560px, calc(100% - 32px));
-  max-height: calc(100dvh - 32px);
+  width: min(540px, calc(100% - 48px));
+  max-height: calc(100dvh - 48px);
   margin: 0;
   padding: 24px;
   overflow-y: auto;
@@ -50,6 +50,23 @@ body.guestbook-form-modal-open { overflow: hidden; }
 }
 
 .guestbook-form-panel.is-opening { animation: guestbook-form-enter .34s cubic-bezier(.2, .8, .2, 1) both; }
+.guestbook-form-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .72);
+  color: #765d61;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.guestbook-form-close:hover { background: #fff; }
 
 @keyframes guestbook-form-enter {
   from { opacity: 0; transform: translate(-50%, calc(-50% - 10px)) scale(.985); }
@@ -461,6 +478,7 @@ body.guestbook-form-modal-open { overflow: hidden; }
 }
 
 @media (max-width: 420px) {
+  .guestbook-form-panel { width: calc(100% - 40px); max-height: calc(100dvh - 40px); padding: 22px 18px; }
   .guestbook-picker-row {
     grid-template-columns: 1fr;
     gap: 8px;

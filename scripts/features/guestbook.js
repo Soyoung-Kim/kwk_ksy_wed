@@ -83,6 +83,7 @@ function cacheElements() {
   els.openButton = document.getElementById('guestbook-open-btn');
   els.formPanel = document.getElementById('guestbook-form-panel');
   els.formBackdrop = document.getElementById('guestbook-form-backdrop');
+  els.formCloseButton = document.getElementById('guestbook-form-close');
   els.form = document.getElementById('guestbook-form');
   els.formTitle = document.getElementById('guestbook-form-title');
   els.formCaption = document.getElementById('guestbook-form-caption');
@@ -796,6 +797,7 @@ function closeAiModal() {
 function bindEvents() {
   els.openButton?.addEventListener('click', openCreateForm);
   els.cancelButton?.addEventListener('click', closeForm);
+  els.formCloseButton?.addEventListener('click', closeForm);
   els.formBackdrop?.addEventListener('click', () => { if (!state.submitting) closeForm(); });
   els.editCancelOverlayButton?.addEventListener('click', closeForm);
   els.form?.addEventListener('submit', handleSubmit);
