@@ -82,6 +82,7 @@ function cacheElements() {
 
   els.openButton = document.getElementById('guestbook-open-btn');
   els.formPanel = document.getElementById('guestbook-form-panel');
+  els.formBackdrop = document.getElementById('guestbook-form-backdrop');
   els.form = document.getElementById('guestbook-form');
   els.formTitle = document.getElementById('guestbook-form-title');
   els.formCaption = document.getElementById('guestbook-form-caption');
@@ -192,23 +193,30 @@ function resetFormState() {
 
 function openCreateForm() {
   resetFormState();
-
-  if (els.formPanel) {
-    els.formPanel.hidden = false;
-    els.formPanel.classList.remove('is-opening');
-    window.requestAnimationFrame(() => els.formPanel?.classList.add('is-opening'));
-  }
-
-  els.nameInput?.focus();
+  openFormModal();
 }
 
 function closeForm() {
   if (els.formPanel) {
     els.formPanel.hidden = true;
   }
+  if (els.formBackdrop) els.formBackdrop.hidden = true;
+  document.body.classList.remove('guestbook-form-modal-open');
 
   closeAiModal();
   resetFormState();
+}
+
+function openFormModal() {
+  if (!els.formPanel) return;
+  els.formBackdrop && (els.formBackdrop.hidden = false);
+  els.formPanel.hidden = false;
+  document.body.classList.add('guestbook-form-modal-open');
+  els.formPanel.classList.remove('is-opening');
+  window.requestAnimationFrame(() => {
+    els.formPanel?.classList.add('is-opening');
+    els.nameInput?.focus();
+  });
 }
 
 function lockGuestbookBoard() {
@@ -250,9 +258,7 @@ function fillFormForEdit(entry) {
   setSelectedTheme(entry.theme || 'pink');
   setSelectedIcon(entry.icon || 'heart');
 
-  if (els.formPanel) {
-    els.formPanel.hidden = false;
-  }
+  openFormModal();
 
   lockGuestbookBoard();
   els.nameInput?.focus();
@@ -370,6 +376,16 @@ function applySavedEntry(entry, isNewEntry) {
       card?.classList.add('is-new');
     });
   }
+}
+
+function focusSavedEntry(entryId) {
+  const card = qsa('.guestbook-card', els.list).find((item) => item.dataset.entryId === entryId);
+  if (!card) return;
+  card.setAttribute('tabindex', '-1');
+  window.setTimeout(() => {
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    window.setTimeout(() => card.focus({ preventScroll: true }), 360);
+  }, 40);
 }
 
 function showCelebration() {
@@ -523,7 +539,10 @@ async function handleSubmit(event) {
 
     applySavedEntry(result?.entry, !isEditing);
     closeForm();
-    if (!isEditing) showCelebration();
+    if (!isEditing) {
+      focusSavedEntry(result?.entry?.id);
+      showCelebration();
+    }
     setStatus('');
   } catch (error) {
     console.error('[guestbook] submit error', error);
@@ -777,9 +796,13 @@ function closeAiModal() {
 function bindEvents() {
   els.openButton?.addEventListener('click', openCreateForm);
   els.cancelButton?.addEventListener('click', closeForm);
+  els.formBackdrop?.addEventListener('click', () => { if (!state.submitting) closeForm(); });
   els.editCancelOverlayButton?.addEventListener('click', closeForm);
   els.form?.addEventListener('submit', handleSubmit);
   els.list?.addEventListener('click', handleListClick);
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !els.formPanel?.hidden && !state.submitting) closeForm();
+  });
 
   for (const button of els.themeButtons) {
     button.addEventListener('click', () => {
