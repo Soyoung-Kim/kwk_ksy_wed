@@ -3,7 +3,8 @@
 .rsvp-help { margin: 12px 0 0; color: #7a6b60; font-size: 0.8rem; text-align: center; }
 .rsvp-modal { position: fixed; inset: 0; z-index: 1450; display: grid; place-items: center; padding: 24px; }
 .rsvp-backdrop { position: absolute; inset: 0; background: rgba(35, 25, 30, 0.56); }
-.rsvp-dialog { position: relative; z-index: 1; width: min(440px, 100%); max-height: calc(100dvh - 48px); overflow: auto; padding: 32px 26px 26px; border-radius: 28px; background: #fffdfb; box-shadow: 0 24px 60px rgba(40, 22, 30, 0.28); }
+.rsvp-dialog { position: relative; z-index: 1; width: min(440px, 100%); max-height: calc(100dvh - 48px); overflow: hidden; padding: 0; border-radius: 28px; background: #fffdfb; box-shadow: 0 24px 60px rgba(40, 22, 30, 0.28); }
+.rsvp-dialog-content { max-height: calc(100dvh - 48px); padding: 32px 26px 26px; overflow: auto; }
 .rsvp-dialog h3 { margin: 0; color: #352e2d; font-size: 1.42rem; letter-spacing: -0.045em; }
 .rsvp-dialog-description { margin: 8px 0 22px; color: #70635e; font-size: 0.9rem; line-height: 1.6; }
 .rsvp-prompt-actions { display: grid; gap: 10px; }
@@ -27,5 +28,5 @@
 .rsvp-field input:focus, .rsvp-field select:focus, .rsvp-field textarea:focus { outline: 0; border-color: #a83f5c; box-shadow: 0 0 0 3px rgba(168, 63, 92, 0.12); }
 .rsvp-status { min-height: 1.4em; margin: 0; color: #a83f5c; font-size: 0.84rem; }
 .rsvp-honeypot { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-@media (max-width: 420px) { .rsvp-modal { padding: 20px; } .rsvp-dialog { max-height: calc(100dvh - 40px); padding: 30px 20px 22px; } }
+@media (max-width: 420px) { .rsvp-modal { padding: 20px; } .rsvp-dialog { max-height: calc(100dvh - 40px); } .rsvp-dialog-content { max-height: calc(100dvh - 40px); padding: 30px 20px 22px; } }
 @media (max-width: 768px) { .rsvp-section { padding: 28px 16px 24px; border-radius: 24px; } }
