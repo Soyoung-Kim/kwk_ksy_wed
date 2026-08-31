@@ -14,10 +14,19 @@ const els = {
   uploadForm: document.getElementById('gallery-upload-form'), uploadFile: document.getElementById('gallery-file'),
   uploadAlt: document.getElementById('gallery-alt'), logout: document.getElementById('logout-button'),
   toast: document.getElementById('admin-toast'),
-  siteSettingsForm: document.getElementById('site-settings-form'), accountsEnabled: document.getElementById('accounts-enabled')
+  siteSettingsForm: document.getElementById('site-settings-form'), accountsEnabled: document.getElementById('accounts-enabled'),
+  siteKeyLabel: document.getElementById('site-key-label'), invitationUrl: document.getElementById('invitation-url')
 };
 
 function setStatus(message = '', login = false) { (login ? els.loginStatus : els.adminStatus).textContent = message; }
+function renderSiteContext() {
+  const invitationUrl = new URL('../', window.location.href).href;
+  if (els.siteKeyLabel) els.siteKeyLabel.textContent = `현재 청첩장 · ${APP_CONFIG.siteKey}`;
+  if (els.invitationUrl) {
+    els.invitationUrl.href = invitationUrl;
+    els.invitationUrl.textContent = invitationUrl;
+  }
+}
 function field(label, name, value, type = 'text', wide = false) {
   const wrap = document.createElement('label');
   if (wide) wrap.className = 'wide';
@@ -329,6 +338,7 @@ els.uploadForm.addEventListener('submit', async (event) => {
 
 if (!supabaseClient) setStatus('Supabase 설정을 찾을 수 없습니다.', true);
 else {
+  renderSiteContext();
   supabaseClient.auth.onAuthStateChange((_event, session) => { showForSession(session); });
   supabaseClient.auth.getSession().then(({ data }) => showForSession(data.session));
 }
