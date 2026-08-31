@@ -1,8 +1,9 @@
 import { supabaseClient } from '../supabaseClient.js';
 import { APP_CONFIG } from '../../config.js';
 
-const TOKEN_KEY = 'wedding-rsvp-client-token';
-const DISMISS_KEY = 'wedding-rsvp-dismissed-date';
+const SITE_KEY = APP_CONFIG.siteKey || 'wedding-invitation';
+const TOKEN_KEY = `wedding-rsvp-client-token:${SITE_KEY}`;
+const DISMISS_KEY = `wedding-rsvp-dismissed-date:${SITE_KEY}`;
 
 function showToast(message) {
   const toast = document.getElementById('toast');
@@ -40,6 +41,7 @@ export function initRsvp() {
   if (!modal || !openButton || !form || !status || !submitButton || !countField || !promptView || !formView || !promptYes || !promptLater) return;
 
   const token = getClientToken();
+  let previousResponseLoaded = false;
   const setAttendanceUi = () => {
     const attending = new FormData(form).get('attendance') === 'attending';
     countField.hidden = !attending;
@@ -59,9 +61,35 @@ export function initRsvp() {
     try { return window.localStorage.getItem(DISMISS_KEY) === today(); } catch { return false; }
   };
   const close = () => { modal.hidden = true; document.body.style.overflow = ''; };
-  const showForm = () => {
+  const loadPreviousResponse = async () => {
+    if (previousResponseLoaded || !supabaseClient) return;
+    previousResponseLoaded = true;
+    status.textContent = '이전에 전달해 주신 내용을 불러오는 중입니다.';
+    const { data, error } = await supabaseClient.rpc('get_wedding_rsvp', {
+      p_client_token: token,
+      p_site_key: SITE_KEY
+    });
+    if (error) {
+      console.warn('[rsvp] previous response load failed', error);
+      status.textContent = '';
+      return;
+    }
+    const saved = Array.isArray(data) ? data[0] : data;
+    if (saved) {
+      const attendanceInput = form.querySelector(`input[name="attendance"][value="${saved.attendance}"]`);
+      if (attendanceInput) attendanceInput.checked = true;
+      form.elements.guest_count.value = String(saved.guest_count || 1);
+      form.elements.name.value = saved.guest_name || '';
+      form.elements.message.value = saved.message || '';
+      setAttendanceUi();
+    }
+    status.textContent = '';
+  };
+  const showForm = async () => {
     promptView.hidden = true; formView.hidden = false; modal.hidden = false; document.body.style.overflow = 'hidden';
-    setAttendanceUi(); form.querySelector('input[name="attendance"]')?.focus();
+    setAttendanceUi();
+    await loadPreviousResponse();
+    form.querySelector('input[name="attendance"]:checked')?.focus();
   };
   const showPrompt = () => {
     formView.hidden = true; promptView.hidden = false; modal.hidden = false; document.body.style.overflow = 'hidden'; promptYes.focus();
@@ -98,7 +126,7 @@ export function initRsvp() {
       p_name: String(values.get('name') || '').trim(),
       p_message: String(values.get('message') || '').trim(),
       p_website: '',
-      p_site_key: APP_CONFIG.siteKey || null
+      p_site_key: SITE_KEY
     });
     submitButton.disabled = false;
     submitButton.textContent = '응답 저장하기';
