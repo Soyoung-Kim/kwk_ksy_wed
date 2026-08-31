@@ -233,7 +233,7 @@
 
       <div class="guestbook-toolbar">
         <button class="button button-primary guestbook-toggle" type="button" id="guestbook-open-btn">
-          축하 메시지 남기기
+          축하 전하기
         </button>
       </div>
 
@@ -323,6 +323,15 @@
         <div class="guestbook-status" id="guestbook-status">축하 메시지를 불러오는 중입니다.</div>
         <div class="guestbook-list" id="guestbook-list"></div>
         <div class="guestbook-pagination" id="guestbook-pagination" aria-label="축하 메시지 페이지"></div>
+      </div>
+
+      <div id="guestbook-celebration" class="guestbook-celebration" role="status" aria-live="polite" hidden>
+        <div class="guestbook-celebration-card">
+          <span class="guestbook-celebration-spark" aria-hidden="true">✦</span>
+          <strong>마음이 전해졌어요</strong>
+          <span>따뜻한 축하를 남겨주셔서 감사합니다.</span>
+          <i aria-hidden="true">✿</i><i aria-hidden="true">♥</i><i aria-hidden="true">✦</i>
+        </div>
       </div>
 
       <div id="guestbook-ai-modal" class="guestbook-ai-modal" hidden>

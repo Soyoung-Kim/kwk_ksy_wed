@@ -91,6 +91,7 @@ function cacheElements() {
   els.passwordInput = document.getElementById('guestbook-password');
   els.submitButton = document.getElementById('guestbook-submit-btn');
   els.cancelButton = document.getElementById('guestbook-cancel-btn');
+  els.celebration = document.getElementById('guestbook-celebration');
 
   els.themeButtons = qsa('.guestbook-theme-btn', els.root || document);
   els.iconButtons = qsa('.guestbook-icon-btn', els.root || document);
@@ -194,6 +195,8 @@ function openCreateForm() {
 
   if (els.formPanel) {
     els.formPanel.hidden = false;
+    els.formPanel.classList.remove('is-opening');
+    window.requestAnimationFrame(() => els.formPanel?.classList.add('is-opening'));
   }
 
   els.nameInput?.focus();
@@ -360,6 +363,25 @@ function applySavedEntry(entry, isNewEntry) {
   }
 
   renderGuestbook();
+
+  if (isNewEntry) {
+    window.requestAnimationFrame(() => {
+      const card = qsa('.guestbook-card', els.list).find((item) => item.dataset.entryId === entry.id);
+      card?.classList.add('is-new');
+    });
+  }
+}
+
+function showCelebration() {
+  if (!els.celebration) return;
+  els.celebration.hidden = false;
+  els.celebration.classList.remove('is-visible');
+  window.requestAnimationFrame(() => els.celebration?.classList.add('is-visible'));
+  window.clearTimeout(showCelebration.timer);
+  showCelebration.timer = window.setTimeout(() => {
+    els.celebration?.classList.remove('is-visible');
+    window.setTimeout(() => { if (els.celebration) els.celebration.hidden = true; }, 220);
+  }, 1450);
 }
 
 function setSubmitLoading(isLoading) {
@@ -497,11 +519,11 @@ async function handleSubmit(event) {
       showToast('축하 메시지가 수정되었습니다.');
     } else {
       result = await invokeFunction(functions.create, payload);
-      showToast('축하 메시지가 등록되었습니다.');
     }
 
     applySavedEntry(result?.entry, !isEditing);
     closeForm();
+    if (!isEditing) showCelebration();
     setStatus('');
   } catch (error) {
     console.error('[guestbook] submit error', error);
