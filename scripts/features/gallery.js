@@ -10,7 +10,10 @@ const galleryState = {
   visibleCount: INITIAL_VISIBLE_COUNT,
   bound: false,
   lightboxIndex: 0,
-  lightboxTouchStartX: 0
+  lightboxTouchStartX: 0,
+  lightboxLoading: false,
+  lightboxLoadRequest: 0,
+  popupPreloadStarted: false
 };
 
 function normalizePhotos(photos) {
@@ -19,8 +22,8 @@ function normalizePhotos(photos) {
   return photos
     .filter((photo) => photo && typeof photo.src === 'string' && photo.src.trim())
     .map((photo, index) => ({
-      // 확대·저장을 제한한 청첩장에서는 큰 원본을 다시 받지 않습니다.
-      src: photo.original || photo.src,
+      // 팝업도 새 고화질 display 파일을 사용해 원본의 큰 전송량을 피합니다.
+      src: photo.src || photo.original,
       thumb: photo.thumb || photo.src,
       alt: photo.alt || `웨딩 사진 ${index + 1}`
     }));
@@ -216,6 +219,46 @@ function renderGallery() {
   updateMoreButton(moreWrapEl, moreButtonEl);
 }
 
+function canWarmPopupPhotos() {
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  return !connection?.saveData && !['slow-2g', '2g'].includes(connection?.effectiveType);
+}
+
+function startPopupPreload() {
+  if (galleryState.popupPreloadStarted || !canWarmPopupPhotos()) return;
+  galleryState.popupPreloadStarted = true;
+  const sources = [...new Set(galleryState.photos.map((photo) => photo.src).filter(Boolean))];
+  let cursor = 0;
+  const warmNext = () => {
+    if (cursor >= sources.length) return;
+    const warm = () => {
+      const image = new Image();
+      image.decoding = 'async';
+      image.fetchPriority = 'low';
+      image.onload = image.onerror = () => window.setTimeout(warmNext, 120);
+      image.src = sources[cursor++];
+    };
+    if ('requestIdleCallback' in window) window.requestIdleCallback(warm, { timeout: 2400 });
+    else window.setTimeout(warm, 900);
+  };
+  warmNext();
+}
+
+function warmPopupPhotosWhenGalleryIsVisible() {
+  const galleryEl = qs('#gallery');
+  if (!galleryEl) return;
+  if (!('IntersectionObserver' in window)) {
+    window.setTimeout(startPopupPreload, 1800);
+    return;
+  }
+  const observer = new IntersectionObserver((entries) => {
+    if (!entries.some((entry) => entry.isIntersecting)) return;
+    observer.disconnect();
+    window.setTimeout(startPopupPreload, 700);
+  }, { rootMargin: '180px 0px' });
+  observer.observe(galleryEl);
+}
+
 function openLightbox(index) {
   const photo = galleryState.photos[index];
   if (!photo) return;
@@ -353,4 +396,5 @@ export function initGallery(photos) {
 
   bindGalleryEvents();
   renderGallery();
+  warmPopupPhotosWhenGalleryIsVisible();
 }

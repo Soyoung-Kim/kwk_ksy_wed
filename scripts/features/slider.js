@@ -46,13 +46,9 @@ async function loadLocalPhotos() {
   if (!response.ok) throw new Error('photos.json 파일을 불러오지 못했습니다.');
   const data = await response.json();
   if (!Array.isArray(data)) throw new Error('photos.json 형식이 올바르지 않습니다.');
-  // 갤러리 격자는 썸네일을 쓰고, 슬라이더·팝업은 원본 사진을 사용합니다.
-  return data
-    .map((photo) => ({
-      ...photo,
-      original: String(photo.src || '').replace('/display/', '/') || photo.src
-    }))
-    .sort((left, right) => fileNumber(left) - fileNumber(right));
+  // 슬라이더·팝업은 원본 대신 고화질 display 파일을 사용합니다.
+  // 모바일 화면에서는 충분히 선명하면서 원본보다 훨씬 빠릅니다.
+  return data.sort((left, right) => fileNumber(left) - fileNumber(right));
 }
 
 async function loadManagedPhotos() {
