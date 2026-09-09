@@ -32,6 +32,12 @@ button.danger { color: #a04f58; background: #fff3f4; border: 1px solid rgba(180,
 .rsvp-summary-item { padding: 14px 10px; border: 1px solid rgba(143,113,92,.16); border-radius: 14px; background: #fffdfa; text-align: center; }
 .rsvp-summary-item span { display: block; color: #8d7565; font-size: .76rem; font-weight: 700; }
 .rsvp-summary-item strong { display: block; margin-top: 3px; color: #463a33; font-size: 1.2rem; }
+.rsvp-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 14px; }
+.rsvp-filter-button { display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 0 12px; border: 1px solid rgba(143,113,92,.22); border-radius: 12px; background: #fff; color: #846f61; font: inherit; cursor: pointer; }
+.rsvp-filter-button strong { font-size: .84rem; letter-spacing: .02em; }
+.rsvp-filter-button span { font-size: .78rem; }
+.rsvp-filter-button.is-active { border-color: #a78365; background: #a78365; color: #fff; box-shadow: 0 5px 12px rgba(167,131,101,.18); }
+.rsvp-filter-button:focus-visible { outline: 3px solid rgba(167,131,101,.25); outline-offset: 2px; }
 .rsvp-list { display: grid; gap: 9px; }
 .rsvp-row { display: grid; grid-template-columns: 86px 1fr auto; gap: 12px; align-items: center; padding: 13px 14px; border: 1px solid rgba(143,113,92,.14); border-radius: 14px; background: #fffdfa; }
 .rsvp-row-status { color: #a04f62; font-size: .84rem; font-weight: 700; }

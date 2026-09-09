@@ -51,6 +51,11 @@
       <section class="admin-section">
         <div class="section-title"><p class="eyebrow">RSVP</p><h2>참석 여부 현황</h2><p>같은 브라우저의 응답은 한 건으로 저장되며, 다시 제출하면 수정됩니다.</p></div>
         <div id="rsvp-summary" class="rsvp-summary"></div>
+        <div id="rsvp-filters" class="rsvp-filters" role="group" aria-label="응답 링크 필터">
+          <button type="button" class="rsvp-filter-button is-active" data-rsvp-filter="all" aria-pressed="true"><strong>전체</strong><span>모든 링크</span></button>
+          <button type="button" class="rsvp-filter-button" data-rsvp-filter="ksy_kwk_wed" aria-pressed="false"><strong>원본</strong><span>ksy</span></button>
+          <button type="button" class="rsvp-filter-button" data-rsvp-filter="kwk_ksy_wed" aria-pressed="false"><strong>복제</strong><span>kwk</span></button>
+        </div>
         <div id="rsvp-list" class="rsvp-list"></div>
       </section>
 

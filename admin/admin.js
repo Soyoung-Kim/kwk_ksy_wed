@@ -3,14 +3,15 @@ import { APP_CONFIG } from '../config.js';
 
 const GALLERY_BUCKET = 'wedding-gallery';
 const SUPPORTED_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp']);
-const state = { contacts: [], accounts: [], gallery: [], rsvps: [], accountsEnabled: true };
+const RSVP_SOURCES = ['ksy_kwk_wed', 'kwk_ksy_wed'];
+const state = { contacts: [], accounts: [], gallery: [], rsvps: [], accountsEnabled: true, rsvpSources: new Set(RSVP_SOURCES) };
 const els = {
   loginView: document.getElementById('login-view'), adminView: document.getElementById('admin-view'),
   loginForm: document.getElementById('login-form'), loginId: document.getElementById('login-id'),
   loginPassword: document.getElementById('login-password'), loginStatus: document.getElementById('login-status'),
   adminStatus: document.getElementById('admin-status'), contacts: document.getElementById('contacts-list'),
   accounts: document.getElementById('accounts-list'), gallery: document.getElementById('gallery-list'),
-  rsvpSummary: document.getElementById('rsvp-summary'), rsvpList: document.getElementById('rsvp-list'),
+  rsvpSummary: document.getElementById('rsvp-summary'), rsvpFilters: document.getElementById('rsvp-filters'), rsvpList: document.getElementById('rsvp-list'),
   uploadForm: document.getElementById('gallery-upload-form'), uploadFile: document.getElementById('gallery-file'),
   uploadAlt: document.getElementById('gallery-alt'), logout: document.getElementById('logout-button'),
   toast: document.getElementById('admin-toast'),
@@ -157,15 +158,27 @@ function renderRsvps() {
     ['불참', `${declined.length}건`],
     ['예상 인원', `${guestTotal}명`]
   ].map(([label, value]) => `<div class="rsvp-summary-item"><span>${label}</span><strong>${value}</strong></div>`).join('');
+  const isAllSelected = state.rsvpSources.size === RSVP_SOURCES.length;
+  els.rsvpFilters?.querySelectorAll('[data-rsvp-filter]').forEach((button) => {
+    const filter = button.dataset.rsvpFilter;
+    const selected = filter === 'all'
+      ? isAllSelected
+      : !isAllSelected && state.rsvpSources.has(filter);
+    button.classList.toggle('is-active', selected);
+    button.setAttribute('aria-pressed', String(selected));
+  });
   els.rsvpList.replaceChildren();
-  if (!state.rsvps.length) {
-    els.rsvpList.textContent = '아직 응답이 없습니다.';
+  const filteredRsvps = isAllSelected
+    ? state.rsvps
+    : state.rsvps.filter((row) => state.rsvpSources.has(row.site_key));
+  if (!filteredRsvps.length) {
+    els.rsvpList.textContent = state.rsvps.length ? '선택한 링크의 응답이 없습니다.' : '아직 응답이 없습니다.';
     return;
   }
-  state.rsvps.forEach((row) => {
+  filteredRsvps.forEach((row) => {
     const item = document.createElement('article'); item.className = 'rsvp-row';
     const response = row.attendance === 'attending' ? `참석 · ${row.guest_count}명` : '불참';
-    const sourceLabel = row.site_key === 'ksy_kwk_wed' ? '원본 링크' : row.site_key === 'kwk_ksy_wed' ? '복제 링크' : '기존 응답';
+    const sourceLabel = row.site_key === 'ksy_kwk_wed' ? 'ksy · 원본 링크' : row.site_key === 'kwk_ksy_wed' ? 'kwk · 복제 링크' : '기존 응답';
     const status = document.createElement('span'); status.className = `rsvp-row-status ${row.attendance === 'declined' ? 'declined' : ''}`; status.textContent = response;
     const copy = document.createElement('div'); copy.className = 'rsvp-row-copy';
     const name = document.createElement('strong'); name.textContent = row.guest_name || '이름 미입력';
@@ -246,6 +259,15 @@ els.loginForm.addEventListener('submit', async (event) => {
   if (error) setStatus('아이디 또는 비밀번호를 확인해주세요.', true);
 });
 els.logout.addEventListener('click', () => supabaseClient.auth.signOut());
+els.rsvpFilters?.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-rsvp-filter]');
+  if (!button) return;
+  const filter = button.dataset.rsvpFilter;
+  if (filter === 'all') state.rsvpSources = new Set(RSVP_SOURCES);
+  else if (state.rsvpSources.size === RSVP_SOURCES.length) state.rsvpSources = new Set([filter]);
+  else state.rsvpSources.add(filter);
+  renderRsvps();
+});
 els.siteSettingsForm?.addEventListener('submit', async (event) => {
   event.preventDefault();
   setStatus('섹션 표시 설정을 저장하는 중입니다.');
