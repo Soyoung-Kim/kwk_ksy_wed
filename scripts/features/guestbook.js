@@ -4,7 +4,7 @@ import { supabaseClient, hasSupabaseConfig, getFunctionHeaders } from '../supaba
 const GUESTBOOK_SELECT_COLUMNS = 'id, theme, icon, display_name, message, created_at, updated_at';
 const PASSWORD_MIN_LENGTH = 4;
 const PASSWORD_MAX_LENGTH = 20;
-const GUESTBOOK_PAGE_SIZE = 4;
+const GUESTBOOK_PAGE_SIZE = 3;
 const ICON_SYMBOLS = {
   heart: '♥', flower: '✿', ribbon: '🎀', sparkle: '✦', smile: '☺', leaf: '❋'
 };
