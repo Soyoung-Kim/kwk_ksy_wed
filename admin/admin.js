@@ -269,8 +269,30 @@ function moveLocalGalleryRow(row, clientY) {
 }
 
 function bindLocalGalleryDrag(row, grip) {
+  let touchId = null;
+  let touchStartY = 0;
   let touchDragging = false;
-  let pointerId = null;
+  let touchTimer = null;
+
+  const startTouchDrag = () => {
+    if (touchId === null || touchDragging) return;
+    touchDragging = true;
+    row.classList.add('is-dragging');
+    document.body.classList.add('local-gallery-dragging');
+  };
+  const stopTouchDrag = () => {
+    window.clearTimeout(touchTimer);
+    touchTimer = null;
+    if (touchDragging) {
+      row.classList.remove('is-dragging');
+      document.body.classList.remove('local-gallery-dragging');
+      syncLocalGalleryOrderFromDom();
+      renderLocalGalleryOrder();
+    }
+    touchDragging = false;
+    touchId = null;
+  };
+  const findTouch = (touches) => Array.from(touches).find((touch) => touch.identifier === touchId);
 
   row.addEventListener('dragstart', (event) => {
     if (event.target.closest('button') && event.target !== grip) { event.preventDefault(); return; }
@@ -288,29 +310,34 @@ function bindLocalGalleryDrag(row, grip) {
     renderLocalGalleryOrder();
   });
 
-  grip.addEventListener('pointerdown', (event) => {
-    if (event.pointerType === 'mouse') return;
+  row.addEventListener('touchstart', (event) => {
+    if (event.touches.length !== 1) return;
+    const touch = event.touches[0];
+    touchId = touch.identifier;
+    touchStartY = touch.clientY;
+    window.clearTimeout(touchTimer);
+    if (event.target.closest('.local-gallery-order-grip')) {
+      event.preventDefault();
+      startTouchDrag();
+    } else {
+      touchTimer = window.setTimeout(startTouchDrag, 220);
+    }
+  }, { passive: false });
+  row.addEventListener('touchmove', (event) => {
+    const touch = findTouch(event.touches);
+    if (!touch) return;
+    if (!touchDragging) {
+      if (Math.abs(touch.clientY - touchStartY) > 10) window.clearTimeout(touchTimer);
+      return;
+    }
     event.preventDefault();
-    touchDragging = true; pointerId = event.pointerId;
-    grip.setPointerCapture?.(pointerId);
-    row.classList.add('is-dragging');
-    document.body.classList.add('local-gallery-dragging');
-  });
-  grip.addEventListener('pointermove', (event) => {
-    if (!touchDragging || event.pointerId !== pointerId) return;
-    event.preventDefault();
-    moveLocalGalleryRow(row, event.clientY);
-  });
-  const finishTouchDrag = (event) => {
-    if (!touchDragging || event.pointerId !== pointerId) return;
-    touchDragging = false; pointerId = null;
-    row.classList.remove('is-dragging');
-    document.body.classList.remove('local-gallery-dragging');
-    syncLocalGalleryOrderFromDom();
-    renderLocalGalleryOrder();
-  };
-  grip.addEventListener('pointerup', finishTouchDrag);
-  grip.addEventListener('pointercancel', finishTouchDrag);
+    moveLocalGalleryRow(row, touch.clientY);
+    const edge = 76;
+    if (touch.clientY < edge) window.scrollBy({ top: -18, behavior: 'auto' });
+    if (touch.clientY > window.innerHeight - edge) window.scrollBy({ top: 18, behavior: 'auto' });
+  }, { passive: false });
+  row.addEventListener('touchend', stopTouchDrag);
+  row.addEventListener('touchcancel', stopTouchDrag);
 }
 
 async function loadData() {
