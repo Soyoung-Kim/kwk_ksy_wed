@@ -243,17 +243,74 @@ function renderLocalGalleryOrder() {
   if (!els.localGalleryOrder) return;
   els.localGalleryOrder.replaceChildren();
   state.localGallery.forEach((photo, index) => {
-    const row = document.createElement('article'); row.className = 'local-gallery-order-row';
+    const row = document.createElement('article'); row.className = 'local-gallery-order-row'; row.draggable = true; row.dataset.photoKey = localPhotoKey(photo);
+    const grip = document.createElement('button'); grip.type = 'button'; grip.className = 'local-gallery-order-grip'; grip.setAttribute('aria-label', `${index + 1}번 사진 순서 이동`); grip.textContent = '⠿';
     const image = document.createElement('img'); image.src = previewUrl(photo.thumb || photo.src); image.alt = photo.alt || `웨딩 사진 ${index + 1}`;
     const label = document.createElement('strong'); label.textContent = `${index + 1}. ${String(photo.src || '').split('/').pop() || '사진'}`;
-    const actions = document.createElement('div'); actions.className = 'local-gallery-order-actions';
-    const up = document.createElement('button'); up.type = 'button'; up.textContent = '위로'; up.disabled = index === 0;
-    const down = document.createElement('button'); down.type = 'button'; down.textContent = '아래로'; down.disabled = index === state.localGallery.length - 1;
-    up.addEventListener('click', () => { [state.localGallery[index - 1], state.localGallery[index]] = [state.localGallery[index], state.localGallery[index - 1]]; renderLocalGalleryOrder(); });
-    down.addEventListener('click', () => { [state.localGallery[index], state.localGallery[index + 1]] = [state.localGallery[index + 1], state.localGallery[index]]; renderLocalGalleryOrder(); });
-    actions.append(up, down); row.append(image, label, actions); els.localGalleryOrder.append(row);
+    row.append(grip, image, label); bindLocalGalleryDrag(row, grip); els.localGalleryOrder.append(row);
   });
   if (!state.localGallery.length) els.localGalleryOrder.textContent = '로컬 사진 목록을 불러오지 못했습니다.';
+}
+
+function syncLocalGalleryOrderFromDom() {
+  if (!els.localGalleryOrder) return;
+  const photosByKey = new Map(state.localGallery.map((photo) => [localPhotoKey(photo), photo]));
+  state.localGallery = Array.from(els.localGalleryOrder.children)
+    .map((row) => photosByKey.get(row.dataset.photoKey))
+    .filter(Boolean);
+}
+
+function moveLocalGalleryRow(row, clientY) {
+  if (!row) return;
+  const target = document.elementFromPoint(row.getBoundingClientRect().left + 24, clientY)?.closest('.local-gallery-order-row');
+  if (!target || target === row || !els.localGalleryOrder?.contains(target)) return;
+  const targetRect = target.getBoundingClientRect();
+  els.localGalleryOrder.insertBefore(row, clientY > targetRect.top + targetRect.height / 2 ? target.nextSibling : target);
+}
+
+function bindLocalGalleryDrag(row, grip) {
+  let touchDragging = false;
+  let pointerId = null;
+
+  row.addEventListener('dragstart', (event) => {
+    if (event.target.closest('button') && event.target !== grip) { event.preventDefault(); return; }
+    row.classList.add('is-dragging');
+    event.dataTransfer.effectAllowed = 'move';
+  });
+  row.addEventListener('dragover', (event) => {
+    event.preventDefault();
+    moveLocalGalleryRow(row.classList.contains('is-dragging') ? row : document.querySelector('.local-gallery-order-row.is-dragging'), event.clientY);
+  });
+  row.addEventListener('dragend', () => {
+    const dragging = document.querySelector('.local-gallery-order-row.is-dragging');
+    dragging?.classList.remove('is-dragging');
+    syncLocalGalleryOrderFromDom();
+    renderLocalGalleryOrder();
+  });
+
+  grip.addEventListener('pointerdown', (event) => {
+    if (event.pointerType === 'mouse') return;
+    event.preventDefault();
+    touchDragging = true; pointerId = event.pointerId;
+    grip.setPointerCapture?.(pointerId);
+    row.classList.add('is-dragging');
+    document.body.classList.add('local-gallery-dragging');
+  });
+  grip.addEventListener('pointermove', (event) => {
+    if (!touchDragging || event.pointerId !== pointerId) return;
+    event.preventDefault();
+    moveLocalGalleryRow(row, event.clientY);
+  });
+  const finishTouchDrag = (event) => {
+    if (!touchDragging || event.pointerId !== pointerId) return;
+    touchDragging = false; pointerId = null;
+    row.classList.remove('is-dragging');
+    document.body.classList.remove('local-gallery-dragging');
+    syncLocalGalleryOrderFromDom();
+    renderLocalGalleryOrder();
+  };
+  grip.addEventListener('pointerup', finishTouchDrag);
+  grip.addEventListener('pointercancel', finishTouchDrag);
 }
 
 async function loadData() {

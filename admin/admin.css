@@ -29,12 +29,13 @@ button.danger { color: #a04f58; background: #fff3f4; border: 1px solid rgba(180,
 .section-title p:last-child { margin: 8px 0 0; font-size: .92rem; }
 .editor-list, .gallery-editor-list { display: grid; gap: 12px; }
 .local-gallery-order { display: grid; gap: 8px; }
-.local-gallery-order-row { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px; border: 1px solid rgba(143,113,92,.15); border-radius: 13px; background: #fffdfa; }
+.local-gallery-order-row { display: grid; grid-template-columns: 30px 48px minmax(0, 1fr); gap: 10px; align-items: center; padding: 9px; border: 1px solid rgba(143,113,92,.15); border-radius: 13px; background: #fffdfa; transition: transform .16s ease, opacity .16s ease, box-shadow .16s ease; }
 .local-gallery-order-row img { width: 48px; height: 48px; border-radius: 9px; object-fit: cover; }
 .local-gallery-order-row strong { overflow: hidden; color: #57483f; font-size: .88rem; text-overflow: ellipsis; white-space: nowrap; }
-.local-gallery-order-actions { display: flex; gap: 6px; }
-.local-gallery-order-actions button { min-height: 32px; padding: 0 9px; border: 1px solid rgba(143,113,92,.18); border-radius: 9px; background: #fff; color: #725d4f; font: inherit; font-size: .78rem; font-weight: 700; cursor: pointer; }
-.local-gallery-order-actions button:disabled { opacity: .38; cursor: default; }
+.local-gallery-order-row.is-dragging { opacity: .58; transform: scale(.985); border-color: #a78365; box-shadow: 0 10px 24px rgba(103,73,51,.14); }
+.local-gallery-order-grip { min-width: 30px; min-height: 42px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: #ad9989; font-size: 1.35rem; font-weight: 700; line-height: 1; letter-spacing: -.08em; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.local-gallery-order-grip:active { cursor: grabbing; color: #8a6954; }
+body.local-gallery-dragging { user-select: none; -webkit-user-select: none; }
 .rsvp-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
 .rsvp-summary-item { padding: 14px 10px; border: 1px solid rgba(143,113,92,.16); border-radius: 14px; background: #fffdfa; text-align: center; }
 .rsvp-summary-item span { display: block; color: #8d7565; font-size: .76rem; font-weight: 700; }
