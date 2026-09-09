@@ -34,8 +34,15 @@
         <form id="site-settings-form" class="editor-card">
           <p class="site-context"><span id="site-key-label"></span><a id="invitation-url" target="_blank" rel="noopener"></a></p>
           <label class="visibility-field"><input id="accounts-enabled" type="checkbox" />계좌 정보 영역 사용</label>
+          <label class="visibility-field"><input id="gallery-storage-enabled" type="checkbox" />Storage 업로드 사진 사용</label>
           <div class="editor-actions"><button type="submit">저장</button></div>
         </form>
+      </section>
+
+      <section class="admin-section">
+        <div class="section-title"><p class="eyebrow">SLIDER ORDER</p><h2>로컬 사진 순서</h2><p><code>assets/photos.json</code>의 사진을 이 청첩장에서 표시할 순서로 정합니다. 위·아래 버튼을 누른 후 저장하세요.</p></div>
+        <div id="local-gallery-order" class="local-gallery-order"></div>
+        <div class="editor-actions"><button id="local-gallery-order-save" type="button">사진 순서 저장</button></div>
       </section>
 
       <section class="admin-section">

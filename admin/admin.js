@@ -4,7 +4,7 @@ import { APP_CONFIG } from '../config.js';
 const GALLERY_BUCKET = 'wedding-gallery';
 const SUPPORTED_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp']);
 const RSVP_SOURCES = ['ksy_kwk_wed', 'kwk_ksy_wed'];
-const state = { contacts: [], accounts: [], gallery: [], rsvps: [], accountsEnabled: true, rsvpSources: new Set(RSVP_SOURCES) };
+const state = { contacts: [], accounts: [], gallery: [], rsvps: [], accountsEnabled: true, galleryStorageEnabled: false, galleryOrder: [], localGallery: [], rsvpSources: new Set(RSVP_SOURCES) };
 const els = {
   loginView: document.getElementById('login-view'), adminView: document.getElementById('admin-view'),
   loginForm: document.getElementById('login-form'), loginId: document.getElementById('login-id'),
@@ -16,6 +16,7 @@ const els = {
   uploadAlt: document.getElementById('gallery-alt'), logout: document.getElementById('logout-button'),
   toast: document.getElementById('admin-toast'),
   siteSettingsForm: document.getElementById('site-settings-form'), accountsEnabled: document.getElementById('accounts-enabled'),
+  galleryStorageEnabled: document.getElementById('gallery-storage-enabled'), localGalleryOrder: document.getElementById('local-gallery-order'), localGalleryOrderSave: document.getElementById('local-gallery-order-save'),
   siteKeyLabel: document.getElementById('site-key-label'), invitationUrl: document.getElementById('invitation-url')
 };
 
@@ -47,6 +48,22 @@ function checkboxField(label, name, checked) {
 function button(text, className = '') { const el = document.createElement('button'); el.type = 'submit'; el.textContent = text; el.className = className; return el; }
 function formValue(form, name) { return new FormData(form).get(name)?.toString().trim() || ''; }
 function previewUrl(imageUrl) { return imageUrl.startsWith('./assets/') ? `../${imageUrl.slice(2)}` : imageUrl; }
+function localPhotoKey(photo) { return String(photo?.src || ''); }
+function applyLocalGalleryOrder(photos, order) {
+  const priorities = new Map((Array.isArray(order) ? order : []).map((key, index) => [String(key), index]));
+  return photos.map((photo, index) => ({ photo, index })).sort((left, right) => {
+    const leftOrder = priorities.get(localPhotoKey(left.photo));
+    const rightOrder = priorities.get(localPhotoKey(right.photo));
+    return (leftOrder ?? Number.MAX_SAFE_INTEGER) - (rightOrder ?? Number.MAX_SAFE_INTEGER) || left.index - right.index;
+  }).map(({ photo }) => photo);
+}
+async function loadLocalGallery() {
+  try {
+    const response = await fetch('../assets/photos.json', { cache: 'no-cache' });
+    const photos = await response.json();
+    return Array.isArray(photos) ? photos : [];
+  } catch { return []; }
+}
 function resolveLoginEmail(value) {
   const normalized = value.trim().toLowerCase();
   return normalized.includes('@') ? normalized : '';
@@ -222,21 +239,43 @@ function renderGallery() {
   });
 }
 
+function renderLocalGalleryOrder() {
+  if (!els.localGalleryOrder) return;
+  els.localGalleryOrder.replaceChildren();
+  state.localGallery.forEach((photo, index) => {
+    const row = document.createElement('article'); row.className = 'local-gallery-order-row';
+    const image = document.createElement('img'); image.src = previewUrl(photo.thumb || photo.src); image.alt = photo.alt || `웨딩 사진 ${index + 1}`;
+    const label = document.createElement('strong'); label.textContent = `${index + 1}. ${String(photo.src || '').split('/').pop() || '사진'}`;
+    const actions = document.createElement('div'); actions.className = 'local-gallery-order-actions';
+    const up = document.createElement('button'); up.type = 'button'; up.textContent = '위로'; up.disabled = index === 0;
+    const down = document.createElement('button'); down.type = 'button'; down.textContent = '아래로'; down.disabled = index === state.localGallery.length - 1;
+    up.addEventListener('click', () => { [state.localGallery[index - 1], state.localGallery[index]] = [state.localGallery[index], state.localGallery[index - 1]]; renderLocalGalleryOrder(); });
+    down.addEventListener('click', () => { [state.localGallery[index], state.localGallery[index + 1]] = [state.localGallery[index + 1], state.localGallery[index]]; renderLocalGalleryOrder(); });
+    actions.append(up, down); row.append(image, label, actions); els.localGalleryOrder.append(row);
+  });
+  if (!state.localGallery.length) els.localGalleryOrder.textContent = '로컬 사진 목록을 불러오지 못했습니다.';
+}
+
 async function loadData() {
   setStatus('관리 정보를 불러오는 중입니다.');
-  const [contacts, accounts, gallery, rsvps, siteSettings] = await Promise.all([
+  const [contacts, accounts, gallery, rsvps, siteSettings, localGallery] = await Promise.all([
     supabaseClient.from('wedding_contacts').select('id, side, contact_type, role_label, name, phone, display_order, is_visible').order('display_order'),
     supabaseClient.from('wedding_accounts').select('id, side, side_label, bank_name, account_holder, account_number, display_order, is_visible').order('display_order'),
     supabaseClient.from('wedding_gallery').select('*').order('display_order'),
     supabaseClient.from('wedding_rsvps').select('attendance, guest_count, guest_name, message, site_key, updated_at').order('updated_at', { ascending: false }),
-    supabaseClient.from('wedding_site_settings').select('accounts_enabled').eq('site_key', APP_CONFIG.siteKey).maybeSingle()
+    supabaseClient.from('wedding_site_settings').select('accounts_enabled, gallery_storage_enabled, gallery_order').eq('site_key', APP_CONFIG.siteKey).maybeSingle(),
+    loadLocalGallery()
   ]);
   const error = contacts.error || accounts.error || gallery.error || rsvps.error;
   if (error) return setStatus(`관리 정보를 불러오지 못했습니다: ${error.message}`);
   state.contacts = contacts.data || []; state.accounts = accounts.data || []; state.gallery = gallery.data || []; state.rsvps = rsvps.data || [];
   state.accountsEnabled = siteSettings.data?.accounts_enabled !== false;
+  state.galleryStorageEnabled = siteSettings.data?.gallery_storage_enabled === true;
+  state.galleryOrder = Array.isArray(siteSettings.data?.gallery_order) ? siteSettings.data.gallery_order : [];
+  state.localGallery = applyLocalGalleryOrder(localGallery, state.galleryOrder);
   if (els.accountsEnabled) els.accountsEnabled.checked = state.accountsEnabled;
-  renderContacts(); renderAccounts(); renderRsvps(); renderGallery(); setStatus('');
+  if (els.galleryStorageEnabled) els.galleryStorageEnabled.checked = state.galleryStorageEnabled;
+  renderContacts(); renderAccounts(); renderRsvps(); renderGallery(); renderLocalGalleryOrder(); setStatus('');
 }
 
 async function showForSession(session) {
@@ -273,11 +312,24 @@ els.siteSettingsForm?.addEventListener('submit', async (event) => {
   setStatus('섹션 표시 설정을 저장하는 중입니다.');
   const { error } = await supabaseClient.from('wedding_site_settings').upsert({
     site_key: APP_CONFIG.siteKey,
-    accounts_enabled: els.accountsEnabled.checked
+    accounts_enabled: els.accountsEnabled.checked,
+    gallery_storage_enabled: els.galleryStorageEnabled.checked
   }, { onConflict: 'site_key' });
   if (error) return notify(`설정 저장에 실패했습니다: ${error.message}`, 'error');
   state.accountsEnabled = els.accountsEnabled.checked;
-  notify(state.accountsEnabled ? '계좌 정보 영역을 표시합니다.' : '계좌 정보 영역을 숨겼습니다.');
+  state.galleryStorageEnabled = els.galleryStorageEnabled.checked;
+  notify('섹션 표시 설정을 저장했습니다.');
+});
+els.localGalleryOrderSave?.addEventListener('click', async () => {
+  setStatus('사진 순서를 저장하는 중입니다.');
+  const galleryOrder = state.localGallery.map(localPhotoKey);
+  const { error } = await supabaseClient.from('wedding_site_settings').upsert({
+    site_key: APP_CONFIG.siteKey,
+    gallery_order: galleryOrder
+  }, { onConflict: 'site_key' });
+  if (error) return notify(`사진 순서 저장에 실패했습니다: ${error.message}`, 'error');
+  state.galleryOrder = galleryOrder;
+  notify('사진 순서를 저장했습니다. 청첩장에 바로 반영됩니다.');
 });
 els.uploadForm.addEventListener('submit', async (event) => {
   event.preventDefault();

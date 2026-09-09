@@ -1,5 +1,6 @@
 import { qs, escapeHtml } from '../utils.js';
 import { supabaseClient } from '../supabaseClient.js';
+import { APP_CONFIG } from '../../config.js';
 
 const sliderState = {
   photos: [],
@@ -15,30 +16,27 @@ const sliderState = {
 let galleryPhotosUpdatedListener = null;
 
 export async function initSlider() {
-  const data = await loadLocalPhotos();
-  sliderState.allPhotos = data;
-  sliderState.photos = data;
+  const [data, gallerySettings] = await Promise.all([loadLocalPhotos(), loadGallerySettings()]);
+  const orderedLocalPhotos = applyGalleryOrder(data, gallerySettings.order);
+  sliderState.allPhotos = orderedLocalPhotos;
+  sliderState.photos = orderedLocalPhotos;
   renderSlider();
   bindSliderControls();
   startSliderTimer();
 
-  // 관리자에서 직접 업로드한 Storage 사진만 뒤에서 반영합니다.
-  // 로컬 asset 행은 photos.json의 숫자 파일 순서를 덮어쓰지 않습니다.
+  // Storage 사진은 관리자에서 사용을 켠 경우에만 로컬 사진을 대체합니다.
+  if (!gallerySettings.storageEnabled) return;
   loadManagedPhotos().then((managedPhotos) => {
     if (!managedPhotos?.length) return;
-    sliderState.allPhotos = managedPhotos;
-    sliderState.photos = managedPhotos;
+    const orderedManagedPhotos = applyGalleryOrder(managedPhotos, gallerySettings.order);
+    sliderState.allPhotos = orderedManagedPhotos;
+    sliderState.photos = orderedManagedPhotos;
     sliderState.currentSlide = 0;
     sliderState.usesManagedPhotos = true;
     renderSlider();
     restartSliderTimer();
     galleryPhotosUpdatedListener?.(sliderState.allPhotos);
   }).catch(() => { /* Local photos remain available as a safe fallback. */ });
-}
-
-function fileNumber(photo) {
-  const match = String(photo?.src || '').match(/\/(\d+)\.[a-z]+(?:\?.*)?$/i);
-  return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER;
 }
 
 async function loadLocalPhotos() {
@@ -50,7 +48,39 @@ async function loadLocalPhotos() {
   if (!Array.isArray(data)) throw new Error('photos.json 형식이 올바르지 않습니다.');
   // 슬라이더·팝업은 원본 대신 고화질 display 파일을 사용합니다.
   // 모바일 화면에서는 충분히 선명하면서 원본보다 훨씬 빠릅니다.
-  return data.sort((left, right) => fileNumber(left) - fileNumber(right));
+  return data;
+}
+
+function getPhotoOrderKey(photo) {
+  return String(photo?.orderKey || photo?.src || '');
+}
+
+function applyGalleryOrder(photos, configuredOrder) {
+  if (!Array.isArray(configuredOrder) || !configuredOrder.length) return photos;
+  const priorities = new Map(configuredOrder.map((key, index) => [String(key), index]));
+  return photos
+    .map((photo, index) => ({ photo, index }))
+    .sort((left, right) => {
+      const leftOrder = priorities.get(getPhotoOrderKey(left.photo));
+      const rightOrder = priorities.get(getPhotoOrderKey(right.photo));
+      return (leftOrder ?? Number.MAX_SAFE_INTEGER) - (rightOrder ?? Number.MAX_SAFE_INTEGER) || left.index - right.index;
+    })
+    .map(({ photo }) => photo);
+}
+
+async function loadGallerySettings() {
+  const defaults = { storageEnabled: false, order: [] };
+  if (!supabaseClient || !APP_CONFIG?.siteKey) return defaults;
+  const { data, error } = await supabaseClient
+    .from('wedding_site_settings')
+    .select('gallery_storage_enabled, gallery_order')
+    .eq('site_key', APP_CONFIG.siteKey)
+    .maybeSingle();
+  if (error || !data) return defaults;
+  return {
+    storageEnabled: data.gallery_storage_enabled === true,
+    order: Array.isArray(data.gallery_order) ? data.gallery_order : []
+  };
 }
 
 async function loadManagedPhotos() {
@@ -58,7 +88,7 @@ async function loadManagedPhotos() {
 
   const { data, error } = await supabaseClient
     .from('wedding_gallery')
-    .select('image_url, thumbnail_url, alt, source_type')
+    .select('id, image_url, thumbnail_url, alt, source_type')
     .eq('is_visible', true)
     .order('display_order');
 
@@ -70,7 +100,8 @@ async function loadManagedPhotos() {
     .map((photo) => ({
       src: photo.thumbnail_url,
       thumb: photo.thumbnail_url,
-      alt: photo.alt
+      alt: photo.alt,
+      orderKey: String(photo.id)
     })) : [];
 }
 

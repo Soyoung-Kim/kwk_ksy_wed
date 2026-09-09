@@ -2,6 +2,8 @@
 create table if not exists public.wedding_site_settings (
   site_key text primary key check (char_length(btrim(site_key)) between 1 and 80),
   accounts_enabled boolean not null default true,
+  gallery_storage_enabled boolean not null default false,
+  gallery_order jsonb not null default '[]'::jsonb,
   updated_at timestamptz not null default now()
 );
 
