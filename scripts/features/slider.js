@@ -42,7 +42,9 @@ function fileNumber(photo) {
 }
 
 async function loadLocalPhotos() {
-  const response = await fetch('./assets/photos.json', { cache: 'force-cache' });
+  // 사진 목록은 매우 작고 자주 바뀔 수 있으므로, 방문할 때마다 최신본을 확인합니다.
+  // 이미지 파일 자체는 브라우저 캐시를 계속 활용합니다.
+  const response = await fetch('./assets/photos.json', { cache: 'no-cache' });
   if (!response.ok) throw new Error('photos.json 파일을 불러오지 못했습니다.');
   const data = await response.json();
   if (!Array.isArray(data)) throw new Error('photos.json 형식이 올바르지 않습니다.');
