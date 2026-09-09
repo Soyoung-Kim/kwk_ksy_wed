@@ -309,7 +309,7 @@ body.guestbook-form-modal-open { overflow: hidden; }
 
 .guestbook-card-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 12px;
@@ -386,9 +386,20 @@ body.guestbook-form-modal-open { overflow: hidden; }
 
 .guestbook-card-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 14px;
+  flex: 0 0 auto;
+  gap: 5px;
+  margin: 0;
+}
+
+.guestbook-card-actions .button {
+  min-height: 29px;
+  padding: 0 9px;
+  border-color: rgba(120, 120, 160, 0.15);
+  border-radius: 9px;
+  color: #77768a;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .guestbook-card-actions button[disabled] {

@@ -273,28 +273,27 @@ function buildCard(entry) {
           <div class="guestbook-card-name"><span class="guestbook-card-icon" aria-hidden="true">${escapeHtml(getIconSymbol(entry.icon))}</span>${escapeHtml(entry.display_name)}</div>
           <div class="guestbook-card-date">${escapeHtml(formatGuestbookDate(entry.created_at))}</div>
         </div>
+        <div class="guestbook-card-actions" aria-label="메시지 관리">
+          <button
+            type="button"
+            class="button button-secondary guestbook-entry-action"
+            data-action="edit"
+            data-entry-id="${escapeHtml(entry.id)}"
+          >
+            수정
+          </button>
+          <button
+            type="button"
+            class="button button-secondary guestbook-entry-action"
+            data-action="delete"
+            data-entry-id="${escapeHtml(entry.id)}"
+          >
+            삭제
+          </button>
+        </div>
       </div>
 
       <div class="guestbook-card-message">${escapeHtml(entry.message)}</div>
-
-      <div class="guestbook-card-actions">
-        <button
-          type="button"
-          class="button button-secondary guestbook-entry-action"
-          data-action="edit"
-          data-entry-id="${escapeHtml(entry.id)}"
-        >
-          수정
-        </button>
-        <button
-          type="button"
-          class="button button-secondary guestbook-entry-action"
-          data-action="delete"
-          data-entry-id="${escapeHtml(entry.id)}"
-        >
-          삭제
-        </button>
-      </div>
     </article>
   `;
 }
