@@ -2,6 +2,7 @@
 <html lang="ko">
 
 <head>
+  <script src="./version-check.js?v=20260916.1"></script>
   <link rel="icon" href="./assets/photos/main_logo.png" type="image/png" />
 
   <meta charset="UTF-8" />
@@ -16,9 +17,9 @@
   <meta property="og:image" content="./assets/photos/main_logo.png" />
   <meta name="theme-color" content="#fbf6f1" />
   <!-- Gallery starts with these tiny previews, so the first swipe never waits for a full photo. -->
-  <link rel="preload" as="image" href="./assets/photos/thumbs/1.jpg" fetchpriority="high" />
-  <link rel="preload" as="image" href="./assets/photos/thumbs/2.jpg" />
-  <link rel="preload" as="image" href="./assets/photos/thumbs/3.jpg" />
+  <link rel="preload" as="image" href="./assets/photos/thumbs/a-001.jpg" fetchpriority="high" />
+  <link rel="preload" as="image" href="./assets/photos/thumbs/a-002.jpg" />
+  <link rel="preload" as="image" href="./assets/photos/thumbs/a-003.jpg" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -26,7 +27,7 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
 
-  <link rel="stylesheet" href="./styles/style.css" />
+  <link rel="stylesheet" href="./styles/style.css?v=20260916.1" />
   <script>
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
     window.scrollTo(0, 0);
@@ -390,6 +391,7 @@
       <h2 id="share-title">청첩장 공유하기</h2>
       <p>소중한 분들께 청첩장을 전해 주세요.</p>
       <div class="share-actions">
+        <!-- <a class="button button-secondary" href="./moments/">오늘의 사진</a> -->
         <button class="button share-kakao-button" type="button" id="share-kakao-btn">카카오톡 공유</button>
         <button class="button button-secondary" type="button" id="share-copy-link-btn">링크 복사</button>
       </div>
@@ -401,6 +403,7 @@
   <div class="lightbox hidden" id="lightbox">
     <button class="lightbox-nav lightbox-prev" id="lightbox-prev" type="button" aria-label="이전 사진">‹</button>
     <button class="lightbox-close" id="lightbox-close" type="button" aria-label="닫기">×</button>
+    <div class="lightbox-loading" id="lightbox-loading" role="status" aria-live="polite"><span></span><em>사진을 불러오는 중입니다</em></div>
     <img id="lightbox-image" src="" alt="확대 이미지" />
     <button class="lightbox-nav lightbox-next" id="lightbox-next" type="button" aria-label="다음 사진">›</button>
     <p class="lightbox-count" id="lightbox-count" aria-live="polite">1 / 1</p>
@@ -454,7 +457,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.8.1/kakao.min.js"></script>
-  <script type="module" src="./scripts/main.js"></script>
+  <script type="module" src="./scripts/main.js?v=20260916.1"></script>
 </body>
 
 </html>

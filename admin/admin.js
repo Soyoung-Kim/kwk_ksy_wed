@@ -17,6 +17,7 @@ const els = {
   toast: document.getElementById('admin-toast'),
   siteSettingsForm: document.getElementById('site-settings-form'), accountsEnabled: document.getElementById('accounts-enabled'),
   galleryStorageEnabled: document.getElementById('gallery-storage-enabled'), localGalleryOrder: document.getElementById('local-gallery-order'), localGalleryOrderSave: document.getElementById('local-gallery-order-save'),
+  googleDriveConnect: document.getElementById('google-drive-connect'),
   siteKeyLabel: document.getElementById('site-key-label'), invitationUrl: document.getElementById('invitation-url')
 };
 
@@ -414,6 +415,26 @@ els.localGalleryOrderSave?.addEventListener('click', async () => {
   if (error) return notify(`사진 순서 저장에 실패했습니다: ${error.message}`, 'error');
   state.galleryOrder = galleryOrder;
   notify('사진 순서를 저장했습니다. 청첩장에 바로 반영됩니다.');
+});
+els.googleDriveConnect?.addEventListener('click', async () => {
+  const popup = window.open('', 'google-drive-connect', 'width=520,height=680');
+  if (!popup) return notify('팝업이 차단되었습니다. 브라우저에서 팝업을 허용한 뒤 다시 시도해주세요.', 'error');
+  setStatus('Google Drive 연결 화면을 여는 중입니다.');
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (!session) { popup.close(); return notify('관리자 로그인이 필요합니다.', 'error'); }
+  try {
+    const response = await fetch(`${APP_CONFIG.supabaseUrl}/functions/v1/google-drive-authorize`, {
+      method: 'POST',
+      headers: { apikey: APP_CONFIG.supabasePublishableKey, Authorization: `Bearer ${session.access_token}` }
+    });
+    const result = await response.json();
+    if (!response.ok || !result.url) throw new Error(result.error || '연결 주소를 만들지 못했습니다.');
+    popup.location.replace(result.url);
+  } catch (error) { popup.close(); notify(`Google Drive 연결에 실패했습니다: ${error.message}`, 'error'); }
+});
+window.addEventListener('message', (event) => {
+  if (event.origin !== APP_CONFIG.supabaseUrl || event.data?.type !== 'google-drive-connected') return;
+  notify('Google Drive 연결을 완료했습니다.');
 });
 els.uploadForm.addEventListener('submit', async (event) => {
   event.preventDefault();

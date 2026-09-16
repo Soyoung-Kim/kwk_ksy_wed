@@ -1,7 +1,8 @@
 param(
   [int]$MaxEdge = 640,
   [int]$Quality = 82,
-  [string]$OutputFolder = 'thumbs'
+  [string]$OutputFolder = 'thumbs',
+  [string]$NamePattern = '*'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -10,7 +11,9 @@ Add-Type -AssemblyName System.Drawing
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $sourceDirectory = Join-Path $projectRoot 'assets/photos'
 $outputDirectory = Join-Path $sourceDirectory $OutputFolder
-$names = @('28', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '22', '23', '24', '25', '26')
+$sourceFiles = Get-ChildItem -LiteralPath $sourceDirectory -File -Filter '*.jpg' |
+  Where-Object { $_.BaseName -like $NamePattern } |
+  Sort-Object Name
 
 New-Item -ItemType Directory -Force -Path $outputDirectory | Out-Null
 $jpegCodec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object { $_.MimeType -eq 'image/jpeg' }
@@ -35,13 +38,10 @@ function Set-ImageOrientation {
   if ($null -ne $rotateFlip) { $Image.RotateFlip($rotateFlip) }
 }
 
-foreach ($name in $names) {
-  $sourcePath = Join-Path $sourceDirectory "$name.jpg"
-  $outputPath = Join-Path $outputDirectory "$name.jpg"
-  if (-not (Test-Path -LiteralPath $sourcePath)) {
-    Write-Warning "Missing source image: $sourcePath"
-    continue
-  }
+foreach ($sourceFile in $sourceFiles) {
+  $name = $sourceFile.BaseName
+  $sourcePath = $sourceFile.FullName
+  $outputPath = Join-Path $outputDirectory $sourceFile.Name
 
   $source = [System.Drawing.Image]::FromFile($sourcePath)
   try {

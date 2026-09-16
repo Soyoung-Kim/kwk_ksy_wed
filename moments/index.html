@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>오늘의 순간</title>
+  <script src="../version-check.js?v=20260916.1"></script>
+  <link rel="stylesheet" href="./moments.css?v=20260916.1">
+</head>
+<body data-upload-modal="true">
+  <main>
+    <header><p>WEDDING MOMENTS</p><h1>오늘의 순간</h1><span id="count">사진을 불러오는 중이에요</span></header>
+    <section id="stage" aria-live="polite"></section>
+    <div class="empty" id="empty" hidden>첫 번째 사진을 기다리고 있어요.</div>
+    <button class="upload" id="open-upload" type="button">사진 올리기</button>
+    <a class="back" href="../">청첩장으로 돌아가기</a>
+  </main>
+  <section class="upload-sheet" id="upload-sheet" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="upload-title">
+    <button class="sheet-backdrop" id="close-upload" type="button" aria-label="사진 올리기 닫기"></button>
+    <div class="sheet-card">
+      <button class="sheet-close" id="close-upload-button" type="button" aria-label="닫기">×</button>
+      <p class="sheet-eyebrow">WEDDING MOMENTS</p>
+      <h2 id="upload-title">오늘의 사진을<br>함께 남겨주세요</h2>
+      <p class="sheet-intro">찍은 사진은 두 사람에게 소중한 선물이 됩니다.<br>한 번에 최대 10장까지 올릴 수 있어요.</p>
+      <form id="upload-form">
+        <label class="picker" for="photos"><strong>사진 선택</strong><span id="file-label">사진을 선택해주세요 · 최대 10장</span></label>
+        <input id="photos" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
+        <div id="previews" class="previews" aria-live="polite"></div>
+        <button id="submit" type="submit" disabled>사진 올리기</button>
+        <p id="status" role="status"></p>
+      </form>
+      <p class="sheet-notice">올린 사진은 예식 기록 화면에 공개될 수 있습니다.</p>
+    </div>
+  </section>
+  <script type="module" src="./moments.js?v=20260916.1"></script>
+  <script type="module" src="../upload/upload.js?v=20260916.1"></script>
+</body>
+</html>

@@ -1,12 +1,13 @@
 <!doctype html>
 <html lang="ko">
 <head>
+  <script src="../version-check.js?v=20260916.1"></script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex, nofollow" />
   <title>청첩장 관리</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
-  <link rel="stylesheet" href="./admin.css" />
+  <link rel="stylesheet" href="./admin.css?v=20260916.1" />
 </head>
 <body>
   <main class="admin-shell">
@@ -37,6 +38,11 @@
           <label class="visibility-field"><input id="gallery-storage-enabled" type="checkbox" />Storage 업로드 사진 사용</label>
           <div class="editor-actions"><button type="submit">저장</button></div>
         </form>
+      </section>
+
+      <section class="admin-section">
+        <div class="section-title"><p class="eyebrow">GUEST PHOTO DRIVE</p><h2>하객 사진 원본 보관함</h2><p>한 번 연결하면 하객은 로그인 없이 사진을 올릴 수 있습니다. 사진은 한 번에 최대 10장으로 제한됩니다.</p></div>
+        <div class="editor-actions"><button id="google-drive-connect" type="button">Google Drive 연결</button></div>
       </section>
 
       <section class="admin-section">
@@ -80,6 +86,6 @@
   <div id="admin-toast" class="admin-toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" src="./admin.js"></script>
+  <script type="module" src="./admin.js?v=20260916.1"></script>
 </body>
 </html>
