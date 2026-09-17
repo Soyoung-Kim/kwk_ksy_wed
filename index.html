@@ -2,7 +2,7 @@
 <html lang="ko">
 
 <head>
-  <script src="./version-check.js?v=20260916.1"></script>
+  <script src="./version-check.js?v=20260917.3"></script>
   <link rel="icon" href="./assets/photos/main_logo.png" type="image/png" />
 
   <meta charset="UTF-8" />
@@ -27,7 +27,7 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
 
-  <link rel="stylesheet" href="./styles/style.css?v=20260916.1" />
+  <link rel="stylesheet" href="./styles/style.css?v=20260917.3" />
   <script>
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
     window.scrollTo(0, 0);
@@ -41,8 +41,13 @@
     <div class="invitation-cover-inner">
       <p class="cover-kicker">WEDDING INVITATION</p>
       <h1 id="invitation-cover-title" class="sr-only">우경과 소영의 결혼식 초대장</h1>
+      <div class="cover-event-details" aria-label="예식 정보">
+        <p class="cover-date">11 / 08</p>
+        <p class="cover-names"><span>김우경 & 김소영</span></p>
+        <p class="cover-venue">일요일 오전 11시 30분<br>농심컨벤션웨딩홀</p>
+      </div>
       <div class="cover-illustration-frame">
-        <img src="./assets/photos/wed_intro_illustration.png" alt="우경과 소영의 웨딩 일러스트" />
+        <img src="./assets/photos/display/a-001.jpg" alt="우경과 소영의 웨딩 사진" fetchpriority="high" />
       </div>
 
       <div class="intro-countdown-wrap cover-countdown">
@@ -457,7 +462,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.8.1/kakao.min.js"></script>
-  <script type="module" src="./scripts/main.js?v=20260916.1"></script>
+  <script type="module" src="./scripts/main.js?v=20260917.3"></script>
 </body>
 
 </html>
