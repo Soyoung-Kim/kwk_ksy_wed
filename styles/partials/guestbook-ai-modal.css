@@ -27,11 +27,16 @@
 }
 
 .guestbook-ai-header {
+  position: sticky;
+  z-index: 2;
+  top: -24px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
-  margin-bottom: 18px;
+  margin: -24px 0 18px;
+  padding: 24px 0 14px;
+  background: #fff;
 }
 
 .guestbook-ai-kicker {

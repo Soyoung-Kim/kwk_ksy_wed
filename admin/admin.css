@@ -36,16 +36,22 @@ button.danger { color: #a04f58; background: #fff3f4; border: 1px solid rgba(180,
 .local-gallery-order-grip { min-width: 30px; min-height: 42px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: #ad9989; font-size: 1.35rem; font-weight: 700; line-height: 1; letter-spacing: -.08em; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
 .local-gallery-order-grip:active { cursor: grabbing; color: #8a6954; }
 body.local-gallery-dragging { user-select: none; -webkit-user-select: none; }
-.rsvp-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
-.rsvp-summary-heading { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 2px; color: #8d7565; font-size: .8rem; }
-.rsvp-summary-heading strong { color: #57483f; font-size: .94rem; }
+.rsvp-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
 .rsvp-summary-item { padding: 14px 10px; border: 1px solid rgba(143,113,92,.16); border-radius: 14px; background: #fffdfa; text-align: center; }
 .rsvp-summary-item span { display: block; color: #8d7565; font-size: .76rem; font-weight: 700; }
 .rsvp-summary-item strong { display: block; margin-top: 3px; color: #463a33; font-size: 1.2rem; }
-.rsvp-filters { display: grid; gap: 8px; margin: 2px 0 14px; }
-.rsvp-filter-label { color: #756960; font-size: .8rem; font-weight: 700; }
-.rsvp-filter-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.rsvp-filter-button { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 10px; border: 1px solid rgba(143,113,92,.22); border-radius: 12px; background: #fff; color: #846f61; font: inherit; font-size: .84rem; cursor: pointer; }
+.rsvp-source-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0 0 14px; }
+.rsvp-source-card { padding: 13px; border: 1px solid rgba(143,113,92,.16); border-radius: 14px; background: #fffdfa; }
+.rsvp-source-card header { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: #54463d; font-size: .84rem; }
+.rsvp-source-card header span { color: #a78365; font-size: .72rem; font-weight: 700; }
+.rsvp-source-card dl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin: 11px 0 0; }
+.rsvp-source-card dl div { min-width: 0; text-align: center; }
+.rsvp-source-card dt { color: #8d7565; font-size: .67rem; }
+.rsvp-source-card dd { margin: 3px 0 0; color: #463a33; font-size: .86rem; font-weight: 800; }
+.rsvp-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 14px; }
+.rsvp-filter-button { display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 0 12px; border: 1px solid rgba(143,113,92,.22); border-radius: 12px; background: #fff; color: #846f61; font: inherit; cursor: pointer; }
+.rsvp-filter-button strong { font-size: .84rem; letter-spacing: .02em; }
+.rsvp-filter-button span { font-size: .78rem; }
 .rsvp-filter-button.is-active { border-color: #a78365; background: #a78365; color: #fff; box-shadow: 0 5px 12px rgba(167,131,101,.18); }
 .rsvp-filter-button:focus-visible { outline: 3px solid rgba(167,131,101,.25); outline-offset: 2px; }
 .rsvp-list { display: grid; gap: 9px; }
@@ -56,7 +62,7 @@ body.local-gallery-dragging { user-select: none; -webkit-user-select: none; }
 .rsvp-row-copy strong, .rsvp-row-copy span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rsvp-row-copy span { margin-top: 2px; color: #756960; font-size: .8rem; }
 .rsvp-row time { color: #8e7d72; font-size: .76rem; white-space: nowrap; }
-@media (max-width: 560px) { .rsvp-summary { grid-template-columns: repeat(2, 1fr); } .rsvp-filter-options { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .rsvp-source-summary { grid-template-columns: 1fr; } }
 .editor-card { padding: 16px; border: 1px solid rgba(143,113,92,.16); border-radius: 16px; background: #fffdfa; }
 .site-context { display: grid; gap: 4px; margin: 0 0 16px; color: #8d7565; font-size: .82rem; line-height: 1.45; }
 .site-context span { font-weight: 700; }

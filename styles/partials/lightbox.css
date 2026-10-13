@@ -18,7 +18,7 @@
 .lightbox img,
 .lightbox-image,
 #lightbox-image {
-  max-width: min(980px, calc(100vw - 40px));
+  max-width: min(980px, calc(100vw - 132px));
   max-height: calc(100vh - 80px);
   object-fit: contain;
   border-radius: 18px;
@@ -28,7 +28,27 @@
   -webkit-touch-callout: none;
   -webkit-user-drag: none;
   pointer-events: none;
+  transition: opacity .18s ease;
 }
+
+.lightbox.is-loading #lightbox-image { opacity: .38; }
+.lightbox-loading {
+  position: absolute;
+  z-index: 4;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  color: #fff;
+  font-size: .84rem;
+  font-style: normal;
+  text-align: center;
+  transform: translate(-50%, -50%);
+}
+.lightbox-loading span { width: 34px; height: 34px; border: 3px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: lightbox-spin .72s linear infinite; }
+.lightbox-loading em { font-style: normal; white-space: nowrap; }
+@keyframes lightbox-spin { to { transform: rotate(360deg); } }
 
 .lightbox-close {
   position: absolute;
@@ -48,20 +68,24 @@
   position: absolute;
   top: 50%;
   z-index: 2;
-  width: 46px;
-  height: 46px;
-  border: 0;
+  width: 54px;
+  height: 54px;
+  border: 1px solid rgba(255, 255, 255, 0.52);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(16, 14, 18, 0.72);
   color: #fff;
-  font-size: 2.2rem;
+  box-shadow: 0 8px 22px rgba(0,0,0,.28);
+  backdrop-filter: blur(8px);
+  font-size: 2.45rem;
   line-height: 1;
   cursor: pointer;
   transform: translateY(-50%);
 }
+.lightbox-nav:hover, .lightbox-nav:focus-visible { background: rgba(255, 255, 255, 0.3); outline: 0; }
+.lightbox.is-loading .lightbox-nav { opacity: .42; pointer-events: none; }
 
-.lightbox-prev { left: 18px; }
-.lightbox-next { right: 18px; }
+.lightbox-prev { left: 22px; }
+.lightbox-next { right: 22px; }
 
 .lightbox-count {
   position: absolute;
@@ -82,3 +106,12 @@
   top: 50% !important;
   bottom: auto !important;
 }
+
+@media (max-width: 480px) {
+  .lightbox img, .lightbox-image, #lightbox-image { max-width: calc(100vw - 106px); }
+  .lightbox-nav { width: 48px; height: 48px; font-size: 2.2rem; }
+  .lightbox-prev { left: 10px; }
+  .lightbox-next { right: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) { .lightbox-loading span { animation: none; } }

@@ -3,19 +3,15 @@ import { APP_CONFIG } from '../config.js';
 
 const GALLERY_BUCKET = 'wedding-gallery';
 const SUPPORTED_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp']);
-const RSVP_FILTER_LABELS = {
-  all: '전체 링크',
-  ksy_kwk_wed: '원본 링크 (ksy)',
-  kwk_ksy_wed: '복제 링크 (kwk)'
-};
-const state = { contacts: [], accounts: [], gallery: [], rsvps: [], accountsEnabled: true, flowerNoticeEnabled: true, guestPhotoShareEnabled: true, galleryStorageEnabled: false, galleryOrder: [], localGallery: [], rsvpFilter: 'all' };
+const RSVP_SOURCES = ['ksy_kwk_wed', 'kwk_ksy_wed'];
+const state = { contacts: [], accounts: [], gallery: [], rsvps: [], accountsEnabled: true, flowerNoticeEnabled: true, guestPhotoShareEnabled: true, galleryStorageEnabled: false, galleryOrder: [], localGallery: [], rsvpSources: new Set(RSVP_SOURCES) };
 const els = {
   loginView: document.getElementById('login-view'), adminView: document.getElementById('admin-view'),
   loginForm: document.getElementById('login-form'), loginId: document.getElementById('login-id'),
   loginPassword: document.getElementById('login-password'), loginStatus: document.getElementById('login-status'),
   adminStatus: document.getElementById('admin-status'), contacts: document.getElementById('contacts-list'),
   accounts: document.getElementById('accounts-list'), gallery: document.getElementById('gallery-list'),
-  rsvpSummary: document.getElementById('rsvp-summary'), rsvpFilters: document.getElementById('rsvp-filters'), rsvpList: document.getElementById('rsvp-list'),
+  rsvpSummary: document.getElementById('rsvp-summary'), rsvpSourceSummary: document.getElementById('rsvp-source-summary'), rsvpFilters: document.getElementById('rsvp-filters'), rsvpList: document.getElementById('rsvp-list'),
   uploadForm: document.getElementById('gallery-upload-form'), uploadFile: document.getElementById('gallery-file'),
   uploadAlt: document.getElementById('gallery-alt'), logout: document.getElementById('logout-button'),
   toast: document.getElementById('admin-toast'),
@@ -172,26 +168,43 @@ function renderAccounts() {
 
 function renderRsvps() {
   if (!els.rsvpSummary || !els.rsvpList) return;
-  const activeFilter = RSVP_FILTER_LABELS[state.rsvpFilter] ? state.rsvpFilter : 'all';
-  const filteredRsvps = activeFilter === 'all'
-    ? state.rsvps
-    : state.rsvps.filter((row) => row.site_key === activeFilter);
-  const attending = filteredRsvps.filter((row) => row.attendance === 'attending');
-  const declined = filteredRsvps.filter((row) => row.attendance === 'declined');
-  const guestTotal = attending.reduce((sum, row) => sum + Number(row.guest_count || 0), 0);
-  els.rsvpSummary.innerHTML = `<div class="rsvp-summary-heading"><span>현재 보기</span><strong>${RSVP_FILTER_LABELS[activeFilter]}</strong></div>${[
-    ['응답', `${filteredRsvps.length}건`],
-    ['참석', `${attending.length}건`],
-    ['불참', `${declined.length}건`],
-    ['예상 인원', `${guestTotal}명`]
-  ].map(([label, value]) => `<div class="rsvp-summary-item"><span>${label}</span><strong>${value}</strong></div>`).join('')}`;
+  const summaryOf = (rows) => {
+    const attending = rows.filter((row) => row.attendance === 'attending');
+    return {
+      attending: attending.length,
+      declined: rows.filter((row) => row.attendance === 'declined').length,
+      guests: attending.reduce((sum, row) => sum + Number(row.guest_count || 0), 0)
+    };
+  };
+  const total = summaryOf(state.rsvps);
+  els.rsvpSummary.innerHTML = [
+    ['참석', `${total.attending}건`],
+    ['불참', `${total.declined}건`],
+    ['예상 인원', `${total.guests}명`]
+  ].map(([label, value]) => `<div class="rsvp-summary-item"><span>${label}</span><strong>${value}</strong></div>`).join('');
+  if (els.rsvpSourceSummary) {
+    const sources = [
+      ['ksy_kwk_wed', '원본 링크', 'ksy'],
+      ['kwk_ksy_wed', '복제 링크', 'kwk']
+    ];
+    els.rsvpSourceSummary.innerHTML = sources.map(([siteKey, label, shortLabel]) => {
+      const summary = summaryOf(state.rsvps.filter((row) => row.site_key === siteKey));
+      return `<article class="rsvp-source-card"><header><strong>${label}</strong><span>${shortLabel}</span></header><dl><div><dt>참석</dt><dd>${summary.attending}건</dd></div><div><dt>불참</dt><dd>${summary.declined}건</dd></div><div><dt>예상 인원</dt><dd>${summary.guests}명</dd></div></dl></article>`;
+    }).join('');
+  }
+  const isAllSelected = state.rsvpSources.size === RSVP_SOURCES.length;
   els.rsvpFilters?.querySelectorAll('[data-rsvp-filter]').forEach((button) => {
     const filter = button.dataset.rsvpFilter;
-    const selected = filter === activeFilter;
+    const selected = filter === 'all'
+      ? isAllSelected
+      : !isAllSelected && state.rsvpSources.has(filter);
     button.classList.toggle('is-active', selected);
     button.setAttribute('aria-pressed', String(selected));
   });
   els.rsvpList.replaceChildren();
+  const filteredRsvps = isAllSelected
+    ? state.rsvps
+    : state.rsvps.filter((row) => state.rsvpSources.has(row.site_key));
   if (!filteredRsvps.length) {
     els.rsvpList.textContent = state.rsvps.length ? '선택한 링크의 응답이 없습니다.' : '아직 응답이 없습니다.';
     return;
@@ -394,8 +407,9 @@ els.rsvpFilters?.addEventListener('click', (event) => {
   const button = event.target.closest('[data-rsvp-filter]');
   if (!button) return;
   const filter = button.dataset.rsvpFilter;
-  if (!RSVP_FILTER_LABELS[filter]) return;
-  state.rsvpFilter = filter;
+  if (filter === 'all') state.rsvpSources = new Set(RSVP_SOURCES);
+  else if (state.rsvpSources.size === RSVP_SOURCES.length) state.rsvpSources = new Set([filter]);
+  else state.rsvpSources.add(filter);
   renderRsvps();
 });
 els.siteSettingsForm?.addEventListener('submit', async (event) => {

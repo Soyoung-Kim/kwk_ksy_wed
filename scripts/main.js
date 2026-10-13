@@ -26,8 +26,19 @@ function initInteractionGuard() {
     }
   });
 
-  // 전역 touchmove 차단은 모바일 스크롤 성능을 크게 떨어뜨립니다.
-  // 확대 제한은 CSS touch-action과 viewport 설정으로 처리합니다.
+  // 일반 스크롤은 유지하고, 브라우저의 두 손가락 핀치 확대만 막습니다.
+  // 약도 팝업은 사용자가 요청한 확대 기능을 유지해야 하므로 예외로 둡니다.
+  const canZoomTarget = (target) => target instanceof Element && target.closest('.map-lightbox-viewport');
+  document.addEventListener('touchmove', (event) => {
+    if (event.touches.length > 1 && !canZoomTarget(event.target)) event.preventDefault();
+  }, { passive: false });
+
+  // iOS Safari 계열의 별도 제스처 이벤트도 차단합니다.
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach((eventName) => {
+    document.addEventListener(eventName, (event) => {
+      if (!canZoomTarget(event.target)) event.preventDefault();
+    }, { passive: false });
+  });
 }
 
 function resetScrollToTop() {

@@ -132,7 +132,12 @@ form.addEventListener('submit', async (event) => {
     setStatus(`${pending.length}장 업로드를 완료했습니다. 감사합니다!`, 100);
     setTimeout(() => {
       if (document.body.dataset.uploadModal === 'true') window.dispatchEvent(new CustomEvent('guest-photo-uploaded'));
-      else location.replace('../moments/');
+      else {
+        input.value = '';
+        previews.replaceChildren();
+        label.textContent = '사진을 선택해주세요 · 최대 10장';
+        submit.disabled = true;
+      }
     }, 900);
   } catch (error) {
     setStatus(`${error.message || '업로드에 실패했습니다.'} 완료된 사진은 저장되어 있습니다. 다시 선택하면 이어서 올릴 수 있어요.`);
