@@ -3,8 +3,12 @@ import { APP_CONFIG } from '../config.js';
 
 const GALLERY_BUCKET = 'wedding-gallery';
 const SUPPORTED_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp']);
-const RSVP_SOURCES = ['ksy_kwk_wed', 'kwk_ksy_wed'];
-const state = { contacts: [], accounts: [], gallery: [], rsvps: [], accountsEnabled: true, galleryStorageEnabled: false, galleryOrder: [], localGallery: [], rsvpSources: new Set(RSVP_SOURCES) };
+const RSVP_FILTER_LABELS = {
+  all: '전체 링크',
+  ksy_kwk_wed: '원본 링크 (ksy)',
+  kwk_ksy_wed: '복제 링크 (kwk)'
+};
+const state = { contacts: [], accounts: [], gallery: [], rsvps: [], accountsEnabled: true, flowerNoticeEnabled: true, guestPhotoShareEnabled: true, galleryStorageEnabled: false, galleryOrder: [], localGallery: [], rsvpFilter: 'all' };
 const els = {
   loginView: document.getElementById('login-view'), adminView: document.getElementById('admin-view'),
   loginForm: document.getElementById('login-form'), loginId: document.getElementById('login-id'),
@@ -15,7 +19,7 @@ const els = {
   uploadForm: document.getElementById('gallery-upload-form'), uploadFile: document.getElementById('gallery-file'),
   uploadAlt: document.getElementById('gallery-alt'), logout: document.getElementById('logout-button'),
   toast: document.getElementById('admin-toast'),
-  siteSettingsForm: document.getElementById('site-settings-form'), accountsEnabled: document.getElementById('accounts-enabled'),
+  siteSettingsForm: document.getElementById('site-settings-form'), accountsEnabled: document.getElementById('accounts-enabled'), flowerNoticeEnabled: document.getElementById('flower-notice-enabled'), guestPhotoShareEnabled: document.getElementById('guest-photo-share-enabled'),
   galleryStorageEnabled: document.getElementById('gallery-storage-enabled'), localGalleryOrder: document.getElementById('local-gallery-order'), localGalleryOrderSave: document.getElementById('local-gallery-order-save'),
   googleDriveConnect: document.getElementById('google-drive-connect'),
   siteKeyLabel: document.getElementById('site-key-label'), invitationUrl: document.getElementById('invitation-url')
@@ -168,27 +172,26 @@ function renderAccounts() {
 
 function renderRsvps() {
   if (!els.rsvpSummary || !els.rsvpList) return;
-  const attending = state.rsvps.filter((row) => row.attendance === 'attending');
-  const declined = state.rsvps.filter((row) => row.attendance === 'declined');
+  const activeFilter = RSVP_FILTER_LABELS[state.rsvpFilter] ? state.rsvpFilter : 'all';
+  const filteredRsvps = activeFilter === 'all'
+    ? state.rsvps
+    : state.rsvps.filter((row) => row.site_key === activeFilter);
+  const attending = filteredRsvps.filter((row) => row.attendance === 'attending');
+  const declined = filteredRsvps.filter((row) => row.attendance === 'declined');
   const guestTotal = attending.reduce((sum, row) => sum + Number(row.guest_count || 0), 0);
-  els.rsvpSummary.innerHTML = [
+  els.rsvpSummary.innerHTML = `<div class="rsvp-summary-heading"><span>현재 보기</span><strong>${RSVP_FILTER_LABELS[activeFilter]}</strong></div>${[
+    ['응답', `${filteredRsvps.length}건`],
     ['참석', `${attending.length}건`],
     ['불참', `${declined.length}건`],
     ['예상 인원', `${guestTotal}명`]
-  ].map(([label, value]) => `<div class="rsvp-summary-item"><span>${label}</span><strong>${value}</strong></div>`).join('');
-  const isAllSelected = state.rsvpSources.size === RSVP_SOURCES.length;
+  ].map(([label, value]) => `<div class="rsvp-summary-item"><span>${label}</span><strong>${value}</strong></div>`).join('')}`;
   els.rsvpFilters?.querySelectorAll('[data-rsvp-filter]').forEach((button) => {
     const filter = button.dataset.rsvpFilter;
-    const selected = filter === 'all'
-      ? isAllSelected
-      : !isAllSelected && state.rsvpSources.has(filter);
+    const selected = filter === activeFilter;
     button.classList.toggle('is-active', selected);
     button.setAttribute('aria-pressed', String(selected));
   });
   els.rsvpList.replaceChildren();
-  const filteredRsvps = isAllSelected
-    ? state.rsvps
-    : state.rsvps.filter((row) => state.rsvpSources.has(row.site_key));
   if (!filteredRsvps.length) {
     els.rsvpList.textContent = state.rsvps.length ? '선택한 링크의 응답이 없습니다.' : '아직 응답이 없습니다.';
     return;
@@ -348,17 +351,21 @@ async function loadData() {
     supabaseClient.from('wedding_accounts').select('id, side, side_label, bank_name, account_holder, account_number, display_order, is_visible').order('display_order'),
     supabaseClient.from('wedding_gallery').select('*').order('display_order'),
     supabaseClient.from('wedding_rsvps').select('attendance, guest_count, guest_name, message, site_key, updated_at').order('updated_at', { ascending: false }),
-    supabaseClient.from('wedding_site_settings').select('accounts_enabled, gallery_storage_enabled, gallery_order').eq('site_key', APP_CONFIG.siteKey).maybeSingle(),
+    supabaseClient.from('wedding_site_settings').select('accounts_enabled, flower_notice_enabled, guest_photo_share_enabled, gallery_storage_enabled, gallery_order').eq('site_key', APP_CONFIG.siteKey).maybeSingle(),
     loadLocalGallery()
   ]);
   const error = contacts.error || accounts.error || gallery.error || rsvps.error;
   if (error) return setStatus(`관리 정보를 불러오지 못했습니다: ${error.message}`);
   state.contacts = contacts.data || []; state.accounts = accounts.data || []; state.gallery = gallery.data || []; state.rsvps = rsvps.data || [];
   state.accountsEnabled = siteSettings.data?.accounts_enabled !== false;
+  state.flowerNoticeEnabled = siteSettings.data?.flower_notice_enabled !== false;
+  state.guestPhotoShareEnabled = siteSettings.data?.guest_photo_share_enabled !== false;
   state.galleryStorageEnabled = siteSettings.data?.gallery_storage_enabled === true;
   state.galleryOrder = Array.isArray(siteSettings.data?.gallery_order) ? siteSettings.data.gallery_order : [];
   state.localGallery = applyLocalGalleryOrder(localGallery, state.galleryOrder);
   if (els.accountsEnabled) els.accountsEnabled.checked = state.accountsEnabled;
+  if (els.flowerNoticeEnabled) els.flowerNoticeEnabled.checked = state.flowerNoticeEnabled;
+  if (els.guestPhotoShareEnabled) els.guestPhotoShareEnabled.checked = state.guestPhotoShareEnabled;
   if (els.galleryStorageEnabled) els.galleryStorageEnabled.checked = state.galleryStorageEnabled;
   renderContacts(); renderAccounts(); renderRsvps(); renderGallery(); renderLocalGalleryOrder(); setStatus('');
 }
@@ -387,9 +394,8 @@ els.rsvpFilters?.addEventListener('click', (event) => {
   const button = event.target.closest('[data-rsvp-filter]');
   if (!button) return;
   const filter = button.dataset.rsvpFilter;
-  if (filter === 'all') state.rsvpSources = new Set(RSVP_SOURCES);
-  else if (state.rsvpSources.size === RSVP_SOURCES.length) state.rsvpSources = new Set([filter]);
-  else state.rsvpSources.add(filter);
+  if (!RSVP_FILTER_LABELS[filter]) return;
+  state.rsvpFilter = filter;
   renderRsvps();
 });
 els.siteSettingsForm?.addEventListener('submit', async (event) => {
@@ -398,10 +404,14 @@ els.siteSettingsForm?.addEventListener('submit', async (event) => {
   const { error } = await supabaseClient.from('wedding_site_settings').upsert({
     site_key: APP_CONFIG.siteKey,
     accounts_enabled: els.accountsEnabled.checked,
+    flower_notice_enabled: els.flowerNoticeEnabled.checked,
+    guest_photo_share_enabled: els.guestPhotoShareEnabled.checked,
     gallery_storage_enabled: els.galleryStorageEnabled.checked
   }, { onConflict: 'site_key' });
   if (error) return notify(`설정 저장에 실패했습니다: ${error.message}`, 'error');
   state.accountsEnabled = els.accountsEnabled.checked;
+  state.flowerNoticeEnabled = els.flowerNoticeEnabled.checked;
+  state.guestPhotoShareEnabled = els.guestPhotoShareEnabled.checked;
   state.galleryStorageEnabled = els.galleryStorageEnabled.checked;
   notify('섹션 표시 설정을 저장했습니다.');
 });

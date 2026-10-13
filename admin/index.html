@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex, nofollow" />
   <title>청첩장 관리</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
-  <link rel="stylesheet" href="./admin.css?v=20260916.1" />
+  <link rel="stylesheet" href="./admin.css?v=20261002.1" />
 </head>
 <body>
   <main class="admin-shell">
@@ -35,6 +35,8 @@
         <form id="site-settings-form" class="editor-card">
           <p class="site-context"><span id="site-key-label"></span><a id="invitation-url" target="_blank" rel="noopener"></a></p>
           <label class="visibility-field"><input id="accounts-enabled" type="checkbox" />계좌 정보 영역 사용</label>
+          <label class="visibility-field"><input id="flower-notice-enabled" type="checkbox" />화환 사양 안내 사용</label>
+          <label class="visibility-field"><input id="guest-photo-share-enabled" type="checkbox" />추억 공유(하객 사진 올리기) 버튼 사용</label>
           <label class="visibility-field"><input id="gallery-storage-enabled" type="checkbox" />Storage 업로드 사진 사용</label>
           <div class="editor-actions"><button type="submit">저장</button></div>
         </form>
@@ -65,9 +67,12 @@
         <div class="section-title"><p class="eyebrow">RSVP</p><h2>참석 여부 현황</h2><p>같은 브라우저의 응답은 한 건으로 저장되며, 다시 제출하면 수정됩니다.</p></div>
         <div id="rsvp-summary" class="rsvp-summary"></div>
         <div id="rsvp-filters" class="rsvp-filters" role="group" aria-label="응답 링크 필터">
-          <button type="button" class="rsvp-filter-button is-active" data-rsvp-filter="all" aria-pressed="true"><strong>전체</strong><span>모든 링크</span></button>
-          <button type="button" class="rsvp-filter-button" data-rsvp-filter="ksy_kwk_wed" aria-pressed="false"><strong>원본</strong><span>ksy</span></button>
-          <button type="button" class="rsvp-filter-button" data-rsvp-filter="kwk_ksy_wed" aria-pressed="false"><strong>복제</strong><span>kwk</span></button>
+          <span class="rsvp-filter-label">응답을 볼 링크</span>
+          <div class="rsvp-filter-options">
+            <button type="button" class="rsvp-filter-button is-active" data-rsvp-filter="all" aria-pressed="true">전체 보기</button>
+            <button type="button" class="rsvp-filter-button" data-rsvp-filter="ksy_kwk_wed" aria-pressed="false">원본 · ksy</button>
+            <button type="button" class="rsvp-filter-button" data-rsvp-filter="kwk_ksy_wed" aria-pressed="false">복제 · kwk</button>
+          </div>
         </div>
         <div id="rsvp-list" class="rsvp-list"></div>
       </section>
@@ -86,6 +91,6 @@
   <div id="admin-toast" class="admin-toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script type="module" src="./admin.js?v=20260916.1"></script>
+  <script type="module" src="./admin.js?v=20261013.1"></script>
 </body>
 </html>

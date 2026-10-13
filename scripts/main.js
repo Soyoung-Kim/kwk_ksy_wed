@@ -130,7 +130,7 @@ async function init() {
     safeImport('intro', './features/intro.js'),
     safeImport('countdown', './features/countdown.js'),
     safeImport('clipboard', './features/clipboard.js'),
-    safeImport('directory', './features/directory.js'),
+    safeImport('directory', './features/directory.js?v=20261013.1'),
     safeImport('share', './features/share.js'),
     safeImport('maps', './features/maps.js'),
     safeImport('guestbook', './features/guestbook.js'),
