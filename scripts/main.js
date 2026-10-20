@@ -139,7 +139,7 @@ async function init() {
     rsvpModule
   ] = await Promise.all([
     safeImport('intro', './features/intro.js'),
-    safeImport('countdown', './features/countdown.js'),
+    safeImport('countdown', './features/countdown.js?v=20261020.2'),
     safeImport('clipboard', './features/clipboard.js'),
     safeImport('directory', './features/directory.js?v=20261013.1'),
     safeImport('share', './features/share.js'),
