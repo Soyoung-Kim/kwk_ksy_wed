@@ -27,7 +27,19 @@ function getClientToken() {
   }
 }
 
-export function initRsvp() {
+async function loadPromptEnabled() {
+  if (!supabaseClient || !APP_CONFIG?.siteKey) return true;
+  const { data, error } = await supabaseClient
+    .from('wedding_site_settings')
+    .select('rsvp_prompt_enabled')
+    .eq('site_key', SITE_KEY)
+    .maybeSingle();
+  // SQL 적용 전이나 설정 행이 없을 때는 기존처럼 안내 팝업을 표시합니다.
+  if (error || !data) return true;
+  return data.rsvp_prompt_enabled !== false;
+}
+
+export async function initRsvp() {
   const modal = document.getElementById('rsvp-modal');
   const openButton = document.getElementById('rsvp-open-button');
   const form = document.getElementById('rsvp-form');
@@ -137,7 +149,8 @@ export function initRsvp() {
     showToast('참석 여부를 저장했습니다. 감사합니다.');
   });
 
-  if (!hasSubmitted() && !dismissedToday()) {
+  const promptEnabled = await loadPromptEnabled();
+  if (promptEnabled && !hasSubmitted() && !dismissedToday()) {
     window.setTimeout(showPrompt, 650);
   }
 }
