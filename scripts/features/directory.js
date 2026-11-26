@@ -167,16 +167,18 @@ function setSectionVisible(selector, enabled) {
 }
 
 async function loadSectionDisplaySettings() {
-  const defaults = { accountsEnabled: true, flowerNoticeEnabled: true, guestPhotoShareEnabled: true };
+  // Personal contact and account details stay hidden if settings cannot be loaded.
+  const defaults = { contactsEnabled: false, accountsEnabled: false, flowerNoticeEnabled: true, guestPhotoShareEnabled: true };
   if (!supabaseClient || !APP_CONFIG?.siteKey) return defaults;
   const { data, error } = await supabaseClient
     .from('wedding_site_settings')
-    .select('accounts_enabled, flower_notice_enabled, guest_photo_share_enabled')
+    .select('contacts_enabled, accounts_enabled, flower_notice_enabled, guest_photo_share_enabled')
     .eq('site_key', APP_CONFIG.siteKey)
     .maybeSingle();
   // SQL 적용 전이나 설정 행이 없을 때는 기존처럼 모든 영역을 표시합니다.
   if (error || !data) return defaults;
   return {
+    contactsEnabled: data.contacts_enabled !== false,
     accountsEnabled: data.accounts_enabled !== false,
     flowerNoticeEnabled: data.flower_notice_enabled !== false,
     guestPhotoShareEnabled: data.guest_photo_share_enabled !== false
@@ -191,6 +193,7 @@ async function loadDirectory() {
       .select('side, role_label, name, phone, display_order')
       .eq('is_visible', true).order('display_order')
   ]);
+  setSectionVisible('#contact-section', displaySettings.contactsEnabled);
   setAccountsSectionVisible(displaySettings.accountsEnabled);
   setSectionVisible('#flower-notice', displaySettings.flowerNoticeEnabled);
   setSectionVisible('#guest-photo-share-section', displaySettings.guestPhotoShareEnabled);

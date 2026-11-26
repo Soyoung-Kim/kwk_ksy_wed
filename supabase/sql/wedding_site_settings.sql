@@ -1,6 +1,7 @@
 -- Per-invitation display settings. Run once in Supabase SQL Editor.
 create table if not exists public.wedding_site_settings (
   site_key text primary key check (char_length(btrim(site_key)) between 1 and 80),
+  contacts_enabled boolean not null default true,
   accounts_enabled boolean not null default true,
   rsvp_prompt_enabled boolean not null default true,
   gallery_storage_enabled boolean not null default false,
