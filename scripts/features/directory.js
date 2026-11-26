@@ -193,7 +193,7 @@ async function loadDirectory() {
   ]);
   setAccountsSectionVisible(displaySettings.accountsEnabled);
   setSectionVisible('#flower-notice', displaySettings.flowerNoticeEnabled);
-  setSectionVisible('#guest-photo-share-link', displaySettings.guestPhotoShareEnabled);
+  setSectionVisible('#guest-photo-share-section', displaySettings.guestPhotoShareEnabled);
   if (contactsResult.error) console.warn('[directory] contacts load failed', contactsResult.error);
   else renderContacts(contactsResult.data || []);
   if (!displaySettings.accountsEnabled) return;

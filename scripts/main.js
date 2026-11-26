@@ -135,19 +135,17 @@ async function init() {
     mapsModule,
     guestbookModule,
     sliderModule,
-    galleryModule,
-    rsvpModule
+    galleryModule
   ] = await Promise.all([
     safeImport('intro', './features/intro.js'),
     safeImport('countdown', './features/countdown.js?v=20261020.4'),
     safeImport('clipboard', './features/clipboard.js'),
-    safeImport('directory', './features/directory.js?v=20261013.1'),
+    safeImport('directory', './features/directory.js?v=20261126.2'),
     safeImport('share', './features/share.js'),
     safeImport('maps', './features/maps.js'),
     safeImport('guestbook', './features/guestbook.js'),
     safeImport('slider', './features/slider.js'),
-    safeImport('gallery', './features/gallery.js'),
-    safeImport('rsvp', './features/rsvp.js')
+    safeImport('gallery', './features/gallery.js')
   ]);
 
   if (introModule?.initIntroParallax) {
@@ -222,11 +220,6 @@ async function init() {
     });
   }
 
-  if (rsvpModule?.initRsvp) {
-    await safeRun('rsvp', async () => {
-      rsvpModule.initRsvp();
-    });
-  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

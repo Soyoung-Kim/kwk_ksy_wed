@@ -2,7 +2,7 @@
 <html lang="ko">
 
 <head>
-  <script src="./version-check.js?v=20261020.4"></script>
+  <script src="./version-check.js?v=20261126.2"></script>
   <link rel="icon" href="./assets/photos/main_logo.png" type="image/png" />
 
   <meta charset="UTF-8" />
@@ -27,7 +27,7 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
 
-  <link rel="stylesheet" href="./styles/style.css?v=20261020.1" />
+  <link rel="stylesheet" href="./styles/style.css?v=20261126.2" />
   <script>
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
     window.scrollTo(0, 0);
@@ -206,13 +206,13 @@
       </div>
     </section>
 
-    <section class="rsvp-section invitation-panel" aria-labelledby="rsvp-title">
+    <section class="photo-upload-section invitation-panel" id="guest-photo-share-section" aria-labelledby="guest-photo-share-title">
       <div class="section-heading">
-        <p class="section-kicker">Attendance</p>
-        <h2 id="rsvp-title">참석 여부 전달</h2>
-        <p class="section-description">보내주신 내용은 예식 준비를 위한 참고용으로 활용됩니다.<br />일정이 변경되셨다면 언제든 편하게 알려주세요.</p>
+        <p class="section-kicker">Wedding Moments</p>
+        <h2 id="guest-photo-share-title">함께한 추억을 나눠주세요</h2>
+        <p class="section-description">가지고 계신 결혼식 사진이 있다면<br />함께 올려주세요. 소중히 간직하겠습니다.</p>
       </div>
-      <button class="button button-primary rsvp-open-button" id="rsvp-open-button" type="button">참석 여부 응답하기</button>
+      <a class="button photo-upload-button" id="guest-photo-share-link" href="./upload/">사진 올리기</a>
     </section>
 
     <section class="wedding-accounts" aria-labelledby="wedding-accounts-title">
@@ -396,7 +396,6 @@
       <h2 id="share-title">청첩장 공유하기</h2>
       <p>소중한 분들께 청첩장을 전해 주세요.</p>
       <div class="share-actions">
-        <a class="button share-memory-button" id="guest-photo-share-link" href="./upload/">함께한 추억 사진 공유하기</a>
         <button class="button share-kakao-button" type="button" id="share-kakao-btn">카카오톡 공유</button>
         <button class="button button-secondary" type="button" id="share-copy-link-btn">링크 복사</button>
       </div>
@@ -422,47 +421,11 @@
     <p class="map-lightbox-hint">두 손가락으로 확대하고, 한 손가락으로 이동할 수 있습니다.</p>
   </div>
 
-  <div class="rsvp-modal" id="rsvp-modal" hidden>
-    <div class="rsvp-backdrop" data-rsvp-close></div>
-    <section class="rsvp-dialog" role="dialog" aria-modal="true" aria-labelledby="rsvp-dialog-title">
-      <button class="rsvp-close" type="button" data-rsvp-close aria-label="참석 여부 응답 닫기">×</button>
-      <div class="rsvp-dialog-content">
-      <div id="rsvp-prompt-view">
-        <p class="section-kicker">Attendance</p>
-        <h3 id="rsvp-dialog-title">참석 여부 전달</h3>
-        <p class="rsvp-dialog-description">보내주신 내용은 예식 준비를 위한 참고용으로 활용됩니다.<br />일정이 변경되셨다면 언제든 편하게 알려주세요.</p>
-        <div class="rsvp-prompt-actions">
-          <button class="button button-primary" id="rsvp-prompt-yes" type="button">응답하기</button>
-          <button class="button button-secondary" id="rsvp-prompt-later" type="button">오늘 하루 보지 않기</button>
-        </div>
-      </div>
-      <div id="rsvp-form-view" hidden>
-        <p class="section-kicker">Attendance</p>
-        <h3>참석 여부 전달</h3>
-        <p class="rsvp-dialog-description">보내주신 내용은 예식 준비를 위한 참고용으로 활용됩니다.<br />일정이 변경되셨다면 언제든 편하게 알려주세요.</p>
-        <form id="rsvp-form" class="rsvp-form">
-        <fieldset class="rsvp-choice-fieldset">
-          <legend>참석 여부</legend>
-          <label class="rsvp-choice"><input type="radio" name="attendance" value="attending" checked /><span>참석합니다</span></label>
-          <label class="rsvp-choice"><input type="radio" name="attendance" value="declined" /><span>참석이 어렵습니다</span></label>
-        </fieldset>
-        <label class="rsvp-field">성함 <span>선택</span><input name="name" maxlength="30" autocomplete="name" placeholder="성함을 입력해주세요" /></label>
-        <label class="rsvp-field" id="rsvp-guest-count-field">참석 인원<select name="guest_count" aria-label="참석 인원"><option value="1">1명</option><option value="2">2명</option><option value="3">3명</option><option value="4">4명</option><option value="5">5명 이상</option></select></label>
-        <label class="rsvp-field">전달 사항 <span>선택</span><textarea name="message" maxlength="200" placeholder="식사 여부 등 전달하실 내용이 있다면 남겨주세요."></textarea></label>
-        <label class="rsvp-honeypot" aria-hidden="true">웹사이트<input name="website" tabindex="-1" autocomplete="off" /></label>
-        <p class="rsvp-status" id="rsvp-status" aria-live="polite"></p>
-        <button class="button button-primary" id="rsvp-submit-button" type="submit">응답 저장하기</button>
-      </form>
-      </div>
-      </div>
-    </section>
-  </div>
-
   <div class="toast" id="toast">복사되었습니다.</div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.8.1/kakao.min.js"></script>
-  <script type="module" src="./scripts/main.js?v=20261020.4"></script>
+  <script type="module" src="./scripts/main.js?v=20261126.2"></script>
 </body>
 
 </html>
