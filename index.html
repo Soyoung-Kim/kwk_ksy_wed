@@ -2,7 +2,7 @@
 <html lang="ko">
 
 <head>
-  <script src="./version-check.js?v=20261126.7"></script>
+  <script src="./version-check.js?v=20261126.8"></script>
   <link rel="icon" href="./assets/photos/main_logo.png" type="image/png" />
 
   <meta charset="UTF-8" />
@@ -32,12 +32,16 @@
     /* Kept here so visitors with an older imported stylesheet still receive the post-wedding cover layout. */
     .invitation-cover.thank-you-stage {
       --cover-stage-height: 100svh;
+      height: 100svh;
     }
     .invitation-cover-inner.thank-you-cover {
       width: 100%;
-      min-height: auto;
-      padding: 0 0 14px;
-      justify-content: flex-start;
+      height: 100svh;
+      min-height: 100svh;
+      padding: 0 0 10px;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto auto;
+      align-content: stretch;
     }
     .thank-you-cover .cover-illustration-frame {
       width: 100%;
@@ -45,6 +49,7 @@
       border-radius: 0;
       display: flex;
       justify-content: center;
+      align-items: stretch;
       background: transparent;
       box-shadow: none;
     }
@@ -52,10 +57,12 @@
       display: block;
       width: auto;
       max-width: 100%;
-      height: auto;
-      max-height: 52svh;
+      height: 100%;
+      max-height: none;
       margin: 0 auto;
     }
+    .thank-you-cover .cover-countdown { margin-top: 8px; }
+    .thank-you-cover .cover-scroll-hint { margin: 8px 0 0; }
   </style>
   <script>
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
@@ -446,7 +453,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.8.1/kakao.min.js"></script>
-  <script type="module" src="./scripts/main.js?v=20261126.7"></script>
+  <script type="module" src="./scripts/main.js?v=20261126.8"></script>
 </body>
 
 </html>
