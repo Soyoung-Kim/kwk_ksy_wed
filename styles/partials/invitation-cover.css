@@ -77,10 +77,10 @@
   z-index: 1;
   position: sticky;
   top: 0;
-  width: min(430px, 100%);
+  width: min(520px, 100%);
   min-height: 100svh;
   margin: 0 auto;
-  padding: 28px 22px 24px;
+  padding: 12px 8px 24px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -144,8 +144,8 @@
 
 .cover-illustration-frame {
   overflow: hidden;
-  border: 1px solid rgba(176, 145, 116, 0.18);
-  border-radius: 24px;
+  border: 0;
+  border-radius: 18px;
   background: #fffdfb;
   box-shadow: 0 18px 40px rgba(100, 76, 58, 0.11);
 }
@@ -153,7 +153,7 @@
 .cover-illustration-frame img {
   width: 100%;
   height: auto;
-  max-height: 42svh;
+  max-height: none;
   object-fit: contain;
   object-position: center;
 }
@@ -187,10 +187,9 @@ html.is-large-text .invitation-cover {
 }
 
 html.is-large-text .cover-illustration-frame img {
-  max-height: 32svh;
+  max-height: none;
 }
 
 @media (max-width: 480px) {
-  .invitation-cover-inner { padding: 26px 18px 22px; }
-  .cover-illustration-frame img { max-height: 40svh; }
+  .invitation-cover-inner { padding: 10px 6px 22px; }
 }
