@@ -2,7 +2,7 @@
 <html lang="ko">
 
 <head>
-  <script src="./version-check.js?v=20261126.6"></script>
+  <script src="./version-check.js?v=20261126.7"></script>
   <link rel="icon" href="./assets/photos/main_logo.png" type="image/png" />
 
   <meta charset="UTF-8" />
@@ -30,22 +30,31 @@
   <link rel="stylesheet" href="./styles/style.css?v=20261126.4" />
   <style>
     /* Kept here so visitors with an older imported stylesheet still receive the post-wedding cover layout. */
+    .invitation-cover.thank-you-stage {
+      --cover-stage-height: 100svh;
+    }
     .invitation-cover-inner.thank-you-cover {
       width: 100%;
       min-height: auto;
-      padding: 0 0 24px;
+      padding: 0 0 14px;
       justify-content: flex-start;
     }
     .thank-you-cover .cover-illustration-frame {
       width: 100%;
       border: 0;
       border-radius: 0;
+      display: flex;
+      justify-content: center;
+      background: transparent;
+      box-shadow: none;
     }
     .thank-you-cover .cover-illustration-frame img {
       display: block;
-      width: 100%;
+      width: auto;
+      max-width: 100%;
       height: auto;
-      max-height: none;
+      max-height: 52svh;
+      margin: 0 auto;
     }
   </style>
   <script>
@@ -55,7 +64,7 @@
 </head>
 
 <body>
-  <section class="invitation-cover" id="invitation-cover" aria-labelledby="invitation-cover-title">
+  <section class="invitation-cover thank-you-stage" id="invitation-cover" aria-labelledby="invitation-cover-title">
     <div class="invitation-cover-inner thank-you-cover">
       <h1 id="invitation-cover-title" class="sr-only">우경과 소영의 감사 인사</h1>
       <div class="cover-illustration-frame">
@@ -437,7 +446,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.8.1/kakao.min.js"></script>
-  <script type="module" src="./scripts/main.js?v=20261126.6"></script>
+  <script type="module" src="./scripts/main.js?v=20261126.7"></script>
 </body>
 
 </html>
